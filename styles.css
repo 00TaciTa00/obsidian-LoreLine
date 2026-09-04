@@ -1,0 +1,186 @@
+/* LoreLine — 옵시디언 테마 변수를 그대로 쓰고, 색만 노트에서 받아 온다. */
+
+.loreline-view .loreline-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  position: sticky;
+  top: 0;
+  background: var(--background-primary);
+  z-index: 2;
+}
+
+.loreline-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-m);
+  background: var(--background-modifier-hover);
+}
+
+.loreline-toggle-button {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 4px 12px;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.loreline-toggle-button.is-active {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-weight: var(--font-semibold);
+}
+
+.loreline-refresh {
+  margin-left: auto;
+}
+
+.loreline-body {
+  padding: 12px;
+  overflow: auto;
+}
+
+.loreline-empty {
+  padding: 24px 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ---- 사건 카드 (세 뷰 공통) ---- */
+
+.loreline-event {
+  --loreline-event-color: var(--background-modifier-border);
+  border-left: 3px solid var(--loreline-event-color);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.loreline-event:hover {
+  background: var(--background-modifier-hover);
+}
+
+.loreline-event-title {
+  font-weight: var(--font-medium);
+}
+
+.loreline-event-time,
+.loreline-event-desc {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-top: 2px;
+}
+
+/* ---- 시간별 ---- */
+
+.loreline-era {
+  margin-bottom: 20px;
+}
+
+.loreline-era-header {
+  --loreline-era-color: var(--text-muted);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border-bottom: 2px solid var(--loreline-era-color);
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+
+.loreline-era-name {
+  font-weight: var(--font-bold);
+  color: var(--loreline-era-color);
+}
+
+.loreline-era-count,
+.loreline-era-empty {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.loreline-time-block {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.loreline-time-label {
+  flex: 0 0 140px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  padding-top: 6px;
+}
+
+.loreline-time-events {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---- 공간별·인물별 격자 ---- */
+
+.loreline-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+.loreline-grid th,
+.loreline-grid td {
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-right: 1px solid var(--background-modifier-border);
+  padding: 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.loreline-grid thead th {
+  position: sticky;
+  top: 0;
+  background: var(--background-primary);
+  z-index: 1;
+}
+
+.loreline-grid-lane {
+  --loreline-lane-color: var(--text-muted);
+  min-width: 180px;
+  border-top: 3px solid var(--loreline-lane-color);
+}
+
+.loreline-lane-name {
+  font-weight: var(--font-semibold);
+}
+
+.loreline-lane-count {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  margin-left: 6px;
+}
+
+.loreline-grid-corner,
+.loreline-grid-time {
+  --loreline-era-color: transparent;
+  position: sticky;
+  left: 0;
+  background: var(--background-primary);
+  min-width: 120px;
+  border-left: 3px solid var(--loreline-era-color);
+  color: var(--text-muted);
+  font-weight: var(--font-normal);
+  z-index: 1;
+}
+
+.loreline-grid thead .loreline-grid-corner {
+  z-index: 3;
+}
+
+.loreline-grid-cell .loreline-event:last-child {
+  margin-bottom: 0;
+}

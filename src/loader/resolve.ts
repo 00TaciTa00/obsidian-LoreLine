@@ -1,0 +1,141 @@
+import type { Character, Era, EventItem, LoreData, Place } from "../lib/types";
+import { DEFAULT_COLOR, type ConfigEntry, type LoreConfig } from "./config";
+import type { RawEvent } from "./parse";
+import type { ScanResult } from "./scan";
+
+/**
+ * 이름 문자열 → 엔티티 객체 해소.
+ *
+ * 세 저장 위치(사건 노트 / 인물·장소 노트 / 정의 파일)를 name으로 잇는다.
+ * 어느 한 쪽에만 있는 이름도 버리지 않는다. 색을 깜빡했다고 사건이 뷰에서
+ * 사라지면 안 되고, 오타로 남은 이름은 눈에 보여야 고칠 수 있기 때문이다.
+ */
+
+/** 정의 파일에 order가 없거나 아예 없는 이름이 갈 자리 */
+const BACK_OF_LIST = Number.MAX_SAFE_INTEGER;
+
+type Entity = { id: string; name: string; color: string; order: number };
+
+/** 이름 목록 + 정의 파일 → 색·순서가 채워진 엔티티 목록 (order 오름차순) */
+function buildEntities(names: Iterable<string>, entries: ConfigEntry[]): Entity[] {
+  const defined = new Map(entries.map((entry) => [entry.name, entry]));
+
+  const seen = new Set<string>();
+  const entities: Entity[] = [];
+  for (const name of names) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+
+    const entry = defined.get(name);
+    entities.push({
+      id: name,
+      name,
+      color: entry?.color ?? DEFAULT_COLOR,
+      order: entry?.order ?? BACK_OF_LIST,
+    });
+  }
+
+  // order가 같으면 이름순. 순서를 안 정한 것들끼리도 볼 때마다 뒤바뀌지 않게 한다.
+  return entities.sort(
+    (a, b) => a.order - b.order || a.name.localeCompare(b.name, "ko"),
+  );
+}
+
+/**
+ * 목록에 들어갈 이름을 모은다.
+ *
+ * 정의 파일 → 개별 노트 → 사건이 참조한 이름 순으로 합집합을 만든다. 사건이
+ * 참조했지만 노트도 정의도 없는 이름까지 넣는 이유는, 빼면 그 사건이 격자에서
+ * 통째로 사라지기 때문이다.
+ */
+function collectNames(
+  entries: ConfigEntry[],
+  fromNotes: string[],
+  fromEvents: string[][],
+): string[] {
+  const names = new Set<string>();
+  for (const entry of entries) names.add(entry.name);
+  for (const name of fromNotes) names.add(name);
+  for (const list of fromEvents) for (const name of list) names.add(name);
+  return [...names];
+}
+
+/** 정의 파일에는 있는데 개별 노트가 없는 이름 (오타·삭제 탐지용) */
+function findOrphans(entries: ConfigEntry[], fromNotes: string[]): string[] {
+  const existing = new Set(fromNotes);
+  return entries.map((entry) => entry.name).filter((name) => !existing.has(name));
+}
+
+/** 사건 하나를 EventItem으로. 이름 참조를 실제 객체로 바꾼다. */
+function resolveEvent(
+  raw: RawEvent,
+  places: Map<string, Place>,
+  characters: Map<string, Character>,
+  eras: Map<string, Era>,
+): EventItem {
+  return {
+    id: raw.path,
+    path: raw.path,
+    title: raw.title,
+    description: raw.description,
+    era: raw.eraName ? (eras.get(raw.eraName) ?? null) : null,
+    displayTime: raw.displayTime,
+    sortKey: raw.sortKey,
+    color: raw.color,
+    // 목록에 없는 이름은 위에서 이미 채워 넣었으므로 여기서 빠지는 일은 없다.
+    places: raw.placeNames.map((name) => places.get(name)).filter(isPresent),
+    characters: raw.characterNames.map((name) => characters.get(name)).filter(isPresent),
+  };
+}
+
+function isPresent<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}
+
+/**
+ * 스캔 결과 + 정의 파일 → 뷰에 넘길 한 덩어리.
+ *
+ * 사건은 sortKey 오름차순으로 정렬한다. 읽기 전용이라 채번·재정렬은 하지 않고
+ * 적힌 값을 그대로 쓴다.
+ */
+export function buildLoreData(scan: ScanResult, config: LoreConfig): LoreData {
+  const placeNames = collectNames(
+    config.places,
+    scan.placeNames,
+    scan.events.map((event) => event.placeNames),
+  );
+  const characterNames = collectNames(
+    config.characters,
+    scan.characterNames,
+    scan.events.map((event) => event.characterNames),
+  );
+  const eraNames = collectNames(
+    config.eras,
+    [],
+    scan.events.map((event) => (event.eraName ? [event.eraName] : [])),
+  );
+
+  const places = buildEntities(placeNames, config.places);
+  const characters = buildEntities(characterNames, config.characters);
+  const eras = buildEntities(eraNames, config.eras);
+
+  const placeById = new Map(places.map((place) => [place.name, place]));
+  const characterById = new Map(characters.map((character) => [character.name, character]));
+  const eraById = new Map(eras.map((era) => [era.name, era]));
+
+  const events = scan.events
+    .map((raw) => resolveEvent(raw, placeById, characterById, eraById))
+    // sortKey가 같으면 경로순. 같은 값을 여러 사건에 써도 순서가 흔들리지 않게 한다.
+    .sort((a, b) => a.sortKey - b.sortKey || a.path.localeCompare(b.path, "ko"));
+
+  return {
+    events,
+    places,
+    characters,
+    eras,
+    orphanNames: [
+      ...findOrphans(config.places, scan.placeNames),
+      ...findOrphans(config.characters, scan.characterNames),
+    ],
+  };
+}
