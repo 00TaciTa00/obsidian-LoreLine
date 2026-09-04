@@ -1,0 +1,60 @@
+/* 옵시디언 테마 변수 흉내. 미리보기 전용이라 실제 테마와 완전히 같지는 않다. */
+:root {
+  --background-primary: #1e1e1e;
+  --background-secondary: #262626;
+  --background-modifier-border: #3a3a3a;
+  --background-modifier-hover: #2f2f2f;
+  --text-normal: #dcddde;
+  --text-muted: #999999;
+  --text-faint: #6b6b6b;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --font-ui-small: 13px;
+  --font-ui-smaller: 12px;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+}
+
+body {
+  margin: 0;
+  background: #141414;
+  color: var(--text-normal);
+  font-family: "Pretendard", "Malgun Gothic", -apple-system, sans-serif;
+  font-size: 15px;
+}
+
+.preview-root {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.preview-note {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.preview-caption {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.preview-pane .loreline-view {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--background-primary);
+}
+
+.preview-pane .loreline-body {
+  max-height: 560px;
+}

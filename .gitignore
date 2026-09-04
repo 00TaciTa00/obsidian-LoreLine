@@ -1,3 +1,5 @@
 node_modules/
 main.js
 *.js.map
+preview*.html
+tools/preview/out.mjs

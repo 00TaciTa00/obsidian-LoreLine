@@ -128,8 +128,9 @@
 .loreline-grid {
   border-collapse: separate;
   border-spacing: 0;
+  /* 필요한 만큼만 넓어진다. 100%로 늘리면 열 수가 적을 때 한 열만 부풀어
+     오른다 — 사건이 많은 열이 남는 폭을 다 가져가기 때문이다. */
   width: max-content;
-  min-width: 100%;
 }
 
 .loreline-grid th,
@@ -150,7 +151,9 @@
 
 .loreline-grid-lane {
   --loreline-lane-color: var(--text-muted);
-  min-width: 180px;
+  /* 모든 열을 같은 폭으로 고정한다. 내용 길이에 따라 열이 들쭉날쭉하면
+     가로로 훑기 어렵다. */
+  width: 240px;
   border-top: 3px solid var(--loreline-lane-color);
 }
 
@@ -179,6 +182,11 @@
 
 .loreline-grid thead .loreline-grid-corner {
   z-index: 3;
+}
+
+.loreline-grid-cell {
+  /* 긴 제목이 열 폭을 밀어내지 않게 한다. */
+  overflow-wrap: anywhere;
 }
 
 .loreline-grid-cell .loreline-event:last-child {
