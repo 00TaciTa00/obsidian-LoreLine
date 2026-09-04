@@ -2,6 +2,44 @@ import { Keymap, type App, type UserEvent } from "obsidian";
 
 import type { EventItem } from "../lib/types";
 
+/**
+ * 이 요소를 눌러 그 노트로 가게 한다.
+ *
+ * 사건 카드, 격자의 열 이름, 기간 이름이 모두 같은 방식으로 열려야 한다.
+ * 마우스만 쓰는 사람도 키보드만 쓰는 사람도 같은 곳에 닿는다.
+ */
+export function asNoteLink(
+  el: HTMLElement,
+  app: App,
+  path: string,
+  label: string,
+): void {
+  el.addClass("loreline-link");
+  el.setAttribute("role", "link");
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("aria-label", label);
+
+  // Ctrl/Cmd를 누른 클릭이면 새 탭. 옵시디언의 링크와 같게 둔다.
+  const open = (source: UserEvent) => {
+    void app.workspace.openLinkText(path, "", Keymap.isModEvent(source));
+  };
+
+  el.addEventListener("click", open);
+  el.addEventListener("auxclick", (source) => {
+    // 가운데 클릭은 보조 키와 상관없이 언제나 새 탭이다. isModEvent에 맡기면
+    // Ctrl을 같이 누르지 않은 가운데 클릭이 같은 탭에서 열려 버린다.
+    if (source.button !== 1) return;
+    source.preventDefault();
+    void app.workspace.openLinkText(path, "", "tab");
+  });
+  el.addEventListener("keydown", (source) => {
+    if (source.key !== "Enter" && source.key !== " ") return;
+    // 스페이스로 페이지가 스크롤되지 않게 한다.
+    source.preventDefault();
+    open(source);
+  });
+}
+
 /** 사건 카드에 쓸 색. 사건에 직접 적은 색이 기간 색보다 우선한다. */
 function eventColor(event: EventItem): string | null {
   return event.color ?? event.era?.color ?? null;
@@ -46,31 +84,7 @@ export function renderEventCard(parent: HTMLElement, app: App, event: EventItem)
     card.createDiv({ cls: "loreline-event-desc", text: description });
   }
 
-  // 카드는 노트로 가는 링크다. 마우스만 쓰는 사람도, 키보드만 쓰는 사람도
-  // 같은 곳에 닿아야 한다.
-  card.setAttribute("role", "link");
-  card.setAttribute("tabindex", "0");
-  card.setAttribute("aria-label", `${event.title} — ${event.displayTime}`);
-
-  // Ctrl/Cmd를 누른 클릭이면 새 탭. 옵시디언의 링크와 같게 둔다.
-  const open = (source: UserEvent) => {
-    void app.workspace.openLinkText(event.path, "", Keymap.isModEvent(source));
-  };
-
-  card.addEventListener("click", open);
-  card.addEventListener("auxclick", (source) => {
-    // 가운데 클릭은 보조 키와 상관없이 언제나 새 탭이다. isModEvent에 맡기면
-    // Ctrl을 같이 누르지 않은 가운데 클릭이 같은 탭에서 열려 버린다.
-    if (source.button !== 1) return;
-    source.preventDefault();
-    void app.workspace.openLinkText(event.path, "", "tab");
-  });
-  card.addEventListener("keydown", (source) => {
-    if (source.key !== "Enter" && source.key !== " ") return;
-    // 스페이스로 페이지가 스크롤되지 않게 한다.
-    source.preventDefault();
-    open(source);
-  });
+  asNoteLink(card, app, event.path, `${event.title} — ${event.displayTime}`);
 
   return card;
 }

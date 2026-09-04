@@ -3,7 +3,7 @@ import type { App } from "obsidian";
 import { buildGrid, laneEventCounts } from "../lib/grid";
 import { computeLanes, type Lane } from "../lib/lanes";
 import type { LoreData } from "../lib/types";
-import { renderEmpty, renderEventCard } from "./shared";
+import { asNoteLink, renderEmpty, renderEventCard } from "./shared";
 
 /** 격자 뷰가 바깥(뷰)과 주고받는 것 */
 export type GridOptions = {
@@ -88,7 +88,11 @@ export function renderGrid(
   for (const lane of shown) {
     const cell = head.createEl("th", { cls: "loreline-grid-lane" });
     cell.style.setProperty("--loreline-lane-color", lane.color);
-    cell.createSpan({ cls: "loreline-lane-name", text: lane.label });
+
+    const label = cell.createSpan({ cls: "loreline-lane-name", text: lane.label });
+    // 노트가 있는 열만 누를 수 있다. 정의 파일에만 적힌 이름은 갈 곳이 없다.
+    if (lane.path) asNoteLink(label, app, lane.path, `${lane.label} ${noun} 노트 열기`);
+
     cell.createSpan({ cls: "loreline-lane-count", text: `${counts.get(lane.id) ?? 0}` });
   }
 
@@ -112,7 +116,8 @@ export function renderGrid(
     if (row.eraColor) timeCell.style.setProperty("--loreline-era-color", row.eraColor);
 
     if (row.eraName) {
-      timeCell.createSpan({ cls: "loreline-grid-era", text: row.eraName });
+      const era = timeCell.createSpan({ cls: "loreline-grid-era", text: row.eraName });
+      if (row.eraPath) asNoteLink(era, app, row.eraPath, `${row.eraName} 기간 노트 열기`);
       timeCell.createSpan({ cls: "loreline-grid-hour", text: row.time });
     } else {
       timeCell.createSpan({ cls: "loreline-grid-hour is-alone", text: row.time });

@@ -5,10 +5,10 @@ import type { Character, EventItem, Place } from "./types";
 import { buildGrid, laneEventCounts } from "./grid";
 
 function place(id: number, name: string): Place {
-  return { id: String(id), name, color: "#000", order: id * 10 };
+  return { id: String(id), name, color: "#000", order: id * 10, path: null };
 }
 function character(id: number, name: string): Character {
-  return { id: String(id), name, color: "#000", order: id * 10 };
+  return { id: String(id), name, color: "#000", order: id * 10, path: null };
 }
 function ev(
   id: number,
@@ -26,7 +26,7 @@ function ev(
     era:
       eraName === null
         ? null
-        : { id: eraName, name: eraName, color: "#000", order: 10 },
+        : { id: eraName, name: eraName, color: "#000", order: 10, path: null },
     displayTime,
     sortKey: id * 1000,
     color: null,
@@ -230,8 +230,8 @@ describe("buildGrid", () => {
 describe("laneEventCounts", () => {
   it("레인별 사건 수를 센다", () => {
     const lanes = [
-      { id: "place-1", label: "왕궁", color: "#000" },
-      { id: "place-2", label: "숲", color: "#000" },
+      { id: "place-1", label: "왕궁", color: "#000", path: null },
+      { id: "place-2", label: "숲", color: "#000", path: null },
     ];
     const counts = laneEventCounts(
       [
@@ -247,7 +247,7 @@ describe("laneEventCounts", () => {
   });
 
   it("사건이 없는 레인도 0으로 포함한다", () => {
-    const lanes = [{ id: "place-9", label: "빈 공간", color: "#000" }];
+    const lanes = [{ id: "place-9", label: "빈 공간", color: "#000", path: null }];
     const counts = laneEventCounts([], lanes, "place");
     expect(counts.get("place-9")).toBe(0);
   });

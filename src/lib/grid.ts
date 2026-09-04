@@ -26,6 +26,8 @@ export type GridRow = {
   eraName: string | null;
   /** 상위 기간을 뺀 하위 시각 그대로 */
   time: string;
+  /** 그 기간의 노트 경로. 없으면 null */
+  eraPath: string | null;
   /** 같은 행으로 묶을지 판단하는 값 (상위+하위) */
   key: string;
   /**
@@ -82,6 +84,7 @@ export function buildGrid(
         // formatDisplayTime과 같은 기준으로 본다. 공백뿐인 이름은 없는 것이다.
         eraName: eraName ? eraName : null,
         time: event.displayTime,
+        eraPath: event.era?.path ?? null,
         key,
         eraColor: event.era?.color ?? null,
         cells: new Map(),

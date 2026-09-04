@@ -14,6 +14,13 @@ export type Era = {
   color: string;
   /** 정의 파일에서 온 목록 순서. 오름차순. */
   order: number;
+  /**
+   * 이 이름의 개별 노트 경로. 없으면 null.
+   *
+   * 정의 파일에만 적혀 있거나 사건이 이름만 가리키는 경우에는 열 노트가 없다.
+   * 뷰에서 이름을 눌러 문서로 갈 수 있는지가 이 값으로 갈린다.
+   */
+  path: string | null;
 };
 
 export type Place = {
@@ -21,6 +28,7 @@ export type Place = {
   name: string;
   color: string;
   order: number;
+  path: string | null;
 };
 
 export type Character = {
@@ -28,6 +36,7 @@ export type Character = {
   name: string;
   color: string;
   order: number;
+  path: string | null;
 };
 
 export type EventItem = {

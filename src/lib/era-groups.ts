@@ -14,6 +14,8 @@ export type EraGroup = {
   name: string;
   /** 기간이 없는 묶음은 색도 없다 */
   color: string | null;
+  /** 그 기간의 노트 경로. 없으면 null */
+  path: string | null;
   times: EraTimeGroup[];
   eventCount: number;
 };
@@ -46,6 +48,7 @@ export function buildEraGroups(events: EventItem[], eras: Era[]): EraGroup[] {
       id: String(era.id),
       name: era.name,
       color: era.color,
+      path: era.path,
       times: [],
       eventCount: 0,
     });
@@ -62,6 +65,7 @@ export function buildEraGroups(events: EventItem[], eras: Era[]): EraGroup[] {
         id: key,
         name: event.era?.name ?? NO_ERA_LABEL,
         color: event.era?.color ?? null,
+        path: event.era?.path ?? null,
         times: [],
         eventCount: 0,
       };

@@ -9,15 +9,18 @@ import {
   type RawEvent,
 } from "./parse";
 
+/** 개별 노트로 존재가 확인된 이름 하나. 경로는 뷰에서 문서로 갈 때 쓴다. */
+export type EntityNote = { name: string; path: string };
+
 /** 볼트 스캔 결과. 아직 색·순서가 붙지 않은 날 것이다. */
 export type ScanResult = {
   events: RawEvent[];
-  /** `loreline: character` 노트로 존재가 확인된 인물 이름 */
-  characterNames: string[];
-  /** `loreline: place` 노트로 존재가 확인된 장소 이름 */
-  placeNames: string[];
-  /** `loreline: era` 노트로 존재가 확인된 기간 이름 */
-  eraNames: string[];
+  /** `loreline: character` 노트들 */
+  characters: EntityNote[];
+  /** `loreline: place` 노트들 */
+  places: EntityNote[];
+  /** `loreline: era` 노트들 */
+  eras: EntityNote[];
   warnings: string[];
 };
 
@@ -27,6 +30,8 @@ type CacheEntry = {
   kind: "event" | "character" | "place" | "era";
   /** 확장자를 뺀 파일명. 인물·장소·기간은 이것이 곧 이름이다. */
   name: string;
+  /** 볼트 경로. 이름을 눌러 그 문서로 갈 때 쓴다. */
+  path: string;
   /** kind가 event일 때만 있다 */
   event: RawEvent | null;
   /** 이 노트가 만든 경고 */
@@ -220,6 +225,7 @@ export async function scanVault(
       mtime: file.stat.mtime,
       kind,
       name: file.basename,
+      path: file.path,
       event: null,
       warnings: [],
     };
@@ -238,6 +244,7 @@ export async function scanVault(
       mtime: file.stat.mtime,
       kind: "event",
       name: file.basename,
+      path: file.path,
       event,
       warnings: eventWarnings,
     };
@@ -252,18 +259,19 @@ export async function scanVault(
 
   const result: ScanResult = {
     events: [],
-    characterNames: [],
-    placeNames: [],
-    eraNames: [],
+    characters: [],
+    places: [],
+    eras: [],
     warnings,
   };
 
   for (const entry of entries) {
     if (!entry) continue;
     result.warnings.push(...entry.warnings);
-    if (entry.kind === "character") result.characterNames.push(entry.name);
-    else if (entry.kind === "place") result.placeNames.push(entry.name);
-    else if (entry.kind === "era") result.eraNames.push(entry.name);
+    const note = { name: entry.name, path: entry.path };
+    if (entry.kind === "character") result.characters.push(note);
+    else if (entry.kind === "place") result.places.push(note);
+    else if (entry.kind === "era") result.eras.push(note);
     else if (entry.event) result.events.push(entry.event);
   }
 

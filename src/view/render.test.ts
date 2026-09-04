@@ -7,14 +7,19 @@ import { renderGrid, type GridOptions } from "./renderGrid";
 import { renderTime } from "./renderTime";
 import { renderEventCard } from "./shared";
 
-function era(name: string, color = "#a855f7", order = 10): Era {
-  return { id: name, name, color, order };
+function era(name: string, color = "#a855f7", order = 10, path: string | null = null): Era {
+  return { id: name, name, color, order, path };
 }
-function place(name: string, color = "#22c55e", order = 10): Place {
-  return { id: name, name, color, order };
+function place(name: string, color = "#22c55e", order = 10, path: string | null = null): Place {
+  return { id: name, name, color, order, path };
 }
-function character(name: string, color = "#3b82f6", order = 10): Character {
-  return { id: name, name, color, order };
+function character(
+  name: string,
+  color = "#3b82f6",
+  order = 10,
+  path: string | null = null,
+): Character {
+  return { id: name, name, color, order, path };
 }
 
 function ev(partial: Partial<EventItem> & { title: string }): EventItem {
@@ -357,5 +362,92 @@ describe("renderGrid - 시간 칸", () => {
     );
 
     expect(fake.query("loreline-grid-time")?.cssVar("--loreline-era-color")).toBe("#a855f7");
+  });
+});
+
+describe("이름을 눌러 문서로", () => {
+  it("노트가 있는 열은 이름이 링크가 된다", () => {
+    const open = vi.fn();
+    const palace = place("왕도", "#22c55e", 10, "장소/왕도.md");
+    const { el, fake } = root();
+
+    renderGrid(el, fakeApp(open), data({ places: [palace] }), "place", GRID_OPTIONS);
+
+    const label = fake.query("loreline-lane-name")!;
+    expect(label.attr("role")).toBe("link");
+    expect(label.attr("tabindex")).toBe("0");
+
+    label.dispatch("click");
+    expect(open).toHaveBeenCalledWith("장소/왕도.md", "", false);
+  });
+
+  it("노트가 없는 열은 누를 것이 없다", () => {
+    // 정의 파일에만 적힌 이름은 갈 곳이 없다.
+    const { el, fake } = root();
+
+    renderGrid(el, fakeApp(), data({ places: [place("왕도")] }), "place", GRID_OPTIONS);
+
+    const label = fake.query("loreline-lane-name")!;
+    expect(label.attr("role")).toBeUndefined();
+    expect(label.listensTo("click")).toBe(false);
+  });
+
+  it("격자의 기간 이름도 링크가 된다", () => {
+    const open = vi.fn();
+    const palace = place("왕도");
+    const third = era("제3 성력", "#a855f7", 10, "기간/제3 성력.md");
+    const { el, fake } = root();
+
+    renderGrid(
+      el,
+      fakeApp(open),
+      data({ places: [palace], events: [ev({ title: "함락", era: third, places: [palace] })] }),
+      "place",
+      GRID_OPTIONS,
+    );
+
+    fake.query("loreline-grid-era")!.dispatch("click");
+    expect(open).toHaveBeenCalledWith("기간/제3 성력.md", "", false);
+  });
+
+  it("시간별 뷰의 기간 머리글도 링크가 된다", () => {
+    const open = vi.fn();
+    const third = era("제3 성력", "#a855f7", 10, "기간/제3 성력.md");
+    const { el, fake } = root();
+
+    renderTime(el, fakeApp(open), data({ eras: [third], events: [ev({ title: "a", era: third })] }));
+
+    fake.query("loreline-era-name")!.dispatch("click");
+    expect(open).toHaveBeenCalledWith("기간/제3 성력.md", "", false);
+  });
+
+  it("노트가 없는 기간 머리글은 누를 것이 없다", () => {
+    const third = era("제3 성력");
+    const { el, fake } = root();
+
+    renderTime(el, fakeApp(), data({ eras: [third], events: [ev({ title: "a", era: third })] }));
+
+    expect(fake.query("loreline-era-name")?.listensTo("click")).toBe(false);
+  });
+
+  it("열 이름도 가운데 클릭이면 새 탭이다", () => {
+    const open = vi.fn();
+    const palace = place("왕도", "#22c55e", 10, "장소/왕도.md");
+    const { el, fake } = root();
+
+    renderGrid(el, fakeApp(open), data({ places: [palace] }), "place", GRID_OPTIONS);
+    fake.query("loreline-lane-name")!.dispatch("auxclick", { button: 1 });
+
+    expect(open).toHaveBeenCalledWith("장소/왕도.md", "", "tab");
+  });
+
+  it("열 건수는 누르는 곳이 아니다", () => {
+    // 숫자는 곁들인 정보지 링크가 아니다.
+    const palace = place("왕도", "#22c55e", 10, "장소/왕도.md");
+    const { el, fake } = root();
+
+    renderGrid(el, fakeApp(), data({ places: [palace] }), "place", GRID_OPTIONS);
+
+    expect(fake.query("loreline-lane-count")?.listensTo("click")).toBe(false);
   });
 });

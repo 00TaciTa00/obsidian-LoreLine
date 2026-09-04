@@ -2,7 +2,7 @@ import { displayTimeKey, formatDisplayTime } from "../lib/display-time";
 import type { Character, Era, EventItem, LoreData, Place } from "../lib/types";
 import { DEFAULT_COLOR, type ConfigEntry, type LoreConfig } from "./config";
 import type { RawEvent } from "./parse";
-import type { ScanResult } from "./scan";
+import type { EntityNote, ScanResult } from "./scan";
 
 /**
  * 이름 문자열 → 엔티티 객체 해소.
@@ -15,24 +15,46 @@ import type { ScanResult } from "./scan";
 /** 정의 파일에 order가 없거나 아예 없는 이름이 갈 자리 */
 const BACK_OF_LIST = Number.MAX_SAFE_INTEGER;
 
-type Entity = { id: string; name: string; color: string; order: number };
+type Entity = {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+  path: string | null;
+};
 
-/** 이름 목록 + 정의 파일 → 색·순서가 채워진 엔티티 목록 (order 오름차순) */
-function buildEntities(names: Iterable<string>, entries: ConfigEntry[]): Entity[] {
+/**
+ * 한 종류(인물·장소·기간)의 목록을 세운다.
+ *
+ * 이름은 정의 파일 → 개별 노트 → 사건이 참조한 것 순으로 합집합을 만든다.
+ * 사건이 참조했지만 노트도 정의도 없는 이름까지 넣는 이유는, 빼면 그 사건이
+ * 격자에서 통째로 사라지기 때문이다.
+ *
+ * 색과 순서는 정의 파일에서, 노트 경로는 개별 노트에서 온다. 둘 다 없을 수
+ * 있고 그래도 목록에는 선다.
+ */
+function buildEntities(
+  notes: EntityNote[],
+  entries: ConfigEntry[],
+  fromEvents: string[][],
+): Entity[] {
   const defined = new Map(entries.map((entry) => [entry.name, entry]));
+  const paths = new Map(notes.map((note) => [note.name, note.path]));
 
-  const seen = new Set<string>();
+  const names = new Set<string>();
+  for (const entry of entries) names.add(entry.name);
+  for (const note of notes) names.add(note.name);
+  for (const list of fromEvents) for (const name of list) names.add(name);
+
   const entities: Entity[] = [];
   for (const name of names) {
-    if (seen.has(name)) continue;
-    seen.add(name);
-
     const entry = defined.get(name);
     entities.push({
       id: name,
       name,
       color: entry?.color ?? DEFAULT_COLOR,
       order: entry?.order ?? BACK_OF_LIST,
+      path: paths.get(name) ?? null,
     });
   }
 
@@ -43,34 +65,15 @@ function buildEntities(names: Iterable<string>, entries: ConfigEntry[]): Entity[
 }
 
 /**
- * 목록에 들어갈 이름을 모은다.
- *
- * 정의 파일 → 개별 노트 → 사건이 참조한 이름 순으로 합집합을 만든다. 사건이
- * 참조했지만 노트도 정의도 없는 이름까지 넣는 이유는, 빼면 그 사건이 격자에서
- * 통째로 사라지기 때문이다.
- */
-function collectNames(
-  entries: ConfigEntry[],
-  fromNotes: string[],
-  fromEvents: string[][],
-): string[] {
-  const names = new Set<string>();
-  for (const entry of entries) names.add(entry.name);
-  for (const name of fromNotes) names.add(name);
-  for (const list of fromEvents) for (const name of list) names.add(name);
-  return [...names];
-}
-
-/**
  * 정의 파일에는 있는데 개별 노트가 없는 이름 (오타·삭제 탐지용).
  *
  * 노트를 아직 하나도 안 만든 종류는 검사하지 않는다. 인물 노트를 쓰지 않기로
  * 했을 뿐인데 정의 파일 전체가 경고로 쏟아지면 쓸모가 없다.
  */
-function findOrphans(entries: ConfigEntry[], fromNotes: string[], noun: string): string[] {
-  if (fromNotes.length === 0) return [];
+function findOrphans(entries: ConfigEntry[], notes: EntityNote[], noun: string): string[] {
+  if (notes.length === 0) return [];
 
-  const existing = new Set(fromNotes);
+  const existing = new Set(notes.map((note) => note.name));
   return entries
     .map((entry) => entry.name)
     .filter((name) => !existing.has(name))
@@ -168,25 +171,21 @@ function isPresent<T>(value: T | undefined): value is T {
  * 적힌 값을 그대로 쓴다.
  */
 export function buildLoreData(scan: ScanResult, config: LoreConfig): LoreData {
-  const placeNames = collectNames(
+  const places = buildEntities(
+    scan.places,
     config.places,
-    scan.placeNames,
     scan.events.map((event) => event.placeNames),
   );
-  const characterNames = collectNames(
+  const characters = buildEntities(
+    scan.characters,
     config.characters,
-    scan.characterNames,
     scan.events.map((event) => event.characterNames),
   );
-  const eraNames = collectNames(
+  const eras = buildEntities(
+    scan.eras,
     config.eras,
-    scan.eraNames,
     scan.events.map((event) => (event.eraName ? [event.eraName] : [])),
   );
-
-  const places = buildEntities(placeNames, config.places);
-  const characters = buildEntities(characterNames, config.characters);
-  const eras = buildEntities(eraNames, config.eras);
 
   const placeById = new Map(places.map((place) => [place.name, place]));
   const characterById = new Map(characters.map((character) => [character.name, character]));
@@ -203,9 +202,9 @@ export function buildLoreData(scan: ScanResult, config: LoreConfig): LoreData {
     characters,
     eras,
     warnings: [
-      ...findOrphans(config.places, scan.placeNames, "장소"),
-      ...findOrphans(config.characters, scan.characterNames, "인물"),
-      ...findOrphans(config.eras, scan.eraNames, "기간"),
+      ...findOrphans(config.places, scan.places, "장소"),
+      ...findOrphans(config.characters, scan.characters, "인물"),
+      ...findOrphans(config.eras, scan.eras, "기간"),
       ...findDuplicateSortKeys(events),
       ...findSplitRows(events),
     ],

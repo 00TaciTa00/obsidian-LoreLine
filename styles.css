@@ -433,3 +433,37 @@
 .loreline-grid-hour.is-alone::before {
   content: none;
 }
+
+/* ---- 이름을 눌러 문서로 ---- */
+
+/*
+ * 누를 수 있는 이름과 그냥 이름을 눈으로 갈라 준다. 노트가 없는 이름
+ * (정의 파일에만 적혔거나 사건이 이름만 가리키는 경우)에는 이 class가 붙지
+ * 않으므로, 눌러 봤자 아무 일도 안 일어나는 곳을 누를 일이 없다.
+ */
+.loreline-link {
+  cursor: pointer;
+}
+
+.loreline-link:hover {
+  color: var(--text-accent, var(--interactive-accent));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 사건 카드는 배경이 바뀌는 것으로 이미 눌린다는 것이 보인다. 밑줄까지는 과하다. */
+.loreline-event.loreline-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.loreline-link:focus-visible {
+  outline: 2px solid var(--interactive-accent, #7c6cf0);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 열 이름은 눌리지만 옆의 건수는 곁들인 정보다. */
+.loreline-grid-lane .loreline-link {
+  display: inline-block;
+}

@@ -4,8 +4,8 @@ import type { Era, EventItem } from "./types";
 
 import { NO_ERA_LABEL, buildEraGroups } from "./era-groups";
 
-function era(id: number, name: string, color = "#111"): Era {
-  return { id: String(id), name, color, order: id * 10 };
+function era(id: number, name: string, color = "#111", path: string | null = null): Era {
+  return { id: String(id), name, color, order: id * 10, path };
 }
 
 function ev(

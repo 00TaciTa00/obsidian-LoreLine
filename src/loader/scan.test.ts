@@ -93,9 +93,10 @@ describe("scanVault - 분류", () => {
     const result = await scanVault(vault.asApp(), "세계", cache);
 
     expect(result.events.map((e) => e.title)).toEqual(["함락"]);
-    expect(result.characterNames).toEqual(["아나이스"]);
-    expect(result.placeNames).toEqual(["왕도"]);
-    expect(result.eraNames).toEqual(["제3 성력"]);
+    // 이름만이 아니라 경로도 든다. 뷰에서 이름을 눌러 그 문서로 가야 한다.
+    expect(result.characters).toEqual([{ name: "아나이스", path: "세계/인물/아나이스.md" }]);
+    expect(result.places).toEqual([{ name: "왕도", path: "세계/장소/왕도.md" }]);
+    expect(result.eras).toEqual([{ name: "제3 성력", path: "세계/기간/제3 성력.md" }]);
     expect(result.warnings).toEqual([]);
   });
 

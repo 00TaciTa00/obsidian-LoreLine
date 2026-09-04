@@ -2,7 +2,7 @@ import type { App } from "obsidian";
 
 import { buildEraGroups } from "../lib/era-groups";
 import type { LoreData } from "../lib/types";
-import { renderEmpty, renderEventCard } from "./shared";
+import { asNoteLink, renderEmpty, renderEventCard } from "./shared";
 
 /**
  * 시간별 뷰. sortKey 오름차순 사건을 "기간 → 작중 시각" 두 단계로 묶어 세로로
@@ -24,7 +24,9 @@ export function renderTime(container: HTMLElement, app: App, data: LoreData): vo
 
     const header = section.createDiv({ cls: "loreline-era-header" });
     if (group.color) header.style.setProperty("--loreline-era-color", group.color);
-    header.createSpan({ cls: "loreline-era-name", text: group.name });
+    const name = header.createSpan({ cls: "loreline-era-name", text: group.name });
+    // 기간 노트가 있으면 머리글에서 바로 갈 수 있게 한다.
+    if (group.path) asNoteLink(name, app, group.path, `${group.name} 기간 노트 열기`);
     header.createSpan({ cls: "loreline-era-count", text: `${group.eventCount}건` });
 
     if (group.times.length === 0) {

@@ -1,7 +1,13 @@
 import type { Character, Place } from "./types";
 
 /** 격자의 한 열 (공간 하나 또는 인물 하나) */
-export type Lane = { id: string; label: string; color: string };
+export type Lane = {
+  id: string;
+  label: string;
+  color: string;
+  /** 그 인물·장소의 노트 경로. 없으면 null (열 이름을 눌러도 갈 곳이 없다) */
+  path: string | null;
+};
 
 /**
  * 감춘 열 목록에서 지금 없는 것을 걸러낸다.
@@ -30,11 +36,13 @@ export function computeLanes(
       id: `place-${p.id}`,
       label: p.name,
       color: p.color,
+      path: p.path,
     }));
   }
   return characters.map((c) => ({
     id: `character-${c.id}`,
     label: c.name,
     color: c.color,
+    path: c.path,
   }));
 }

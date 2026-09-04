@@ -65,9 +65,9 @@ function walk(dir: string): string[] {
 function scanFolder(): ScanResult {
   const result: ScanResult = {
     events: [],
-    characterNames: [],
-    placeNames: [],
-    eraNames: [],
+    characters: [],
+    places: [],
+    eras: [],
     warnings: [],
   };
 
@@ -77,12 +77,13 @@ function scanFolder(): ScanResult {
     const basename = path.split("/").at(-1)!.replace(/\.md$/, "");
 
     const kind = toText(fields.loreline);
+    const note = { name: basename, path: path.slice(vault.length + 1) };
     if (kind === "character") {
-      result.characterNames.push(basename);
+      result.characters.push(note);
     } else if (kind === "place") {
-      result.placeNames.push(basename);
+      result.places.push(note);
     } else if (kind === "era") {
-      result.eraNames.push(basename);
+      result.eras.push(note);
     } else if (kind === "event") {
       const displayTime = toText(fields.displayTime);
       if (!displayTime) continue;

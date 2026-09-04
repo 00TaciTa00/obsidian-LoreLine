@@ -3,7 +3,17 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_COLOR, EMPTY_CONFIG, type LoreConfig } from "./config";
 import type { RawEvent } from "./parse";
 import { buildLoreData } from "./resolve";
-import type { ScanResult } from "./scan";
+import type { EntityNote, ScanResult } from "./scan";
+
+/** 개별 노트 하나. 이름과 경로가 함께 온다. */
+function note(name: string): EntityNote {
+  return { name, path: `${name}.md` };
+}
+
+/** 이름들을 노트 목록으로 */
+function notes(...names: string[]): EntityNote[] {
+  return names.map(note);
+}
 
 function raw(partial: Partial<RawEvent> & { path: string }): RawEvent {
   return {
@@ -22,9 +32,9 @@ function raw(partial: Partial<RawEvent> & { path: string }): RawEvent {
 function scan(partial: Partial<ScanResult> = {}): ScanResult {
   return {
     events: [],
-    characterNames: [],
-    placeNames: [],
-    eraNames: [],
+    characters: [],
+    places: [],
+    eras: [],
     warnings: [],
     ...partial,
   };
@@ -72,7 +82,7 @@ describe("buildLoreData - 정렬", () => {
 
   it("인물·장소는 정의 파일의 order 순으로 놓는다", () => {
     const data = buildLoreData(
-      scan({ characterNames: ["지벨린", "아나이스"] }),
+      scan({ characters: notes("지벨린", "아나이스") }),
       CONFIG,
     );
 
@@ -84,8 +94,8 @@ describe("buildLoreData - 해소", () => {
   it("이름을 색이 붙은 객체로 바꾼다", () => {
     const data = buildLoreData(
       scan({
-        characterNames: ["아나이스"],
-        placeNames: ["왕도"],
+        characters: notes("아나이스"),
+        places: notes("왕도"),
         events: [
           raw({
             path: "함락.md",
@@ -104,6 +114,7 @@ describe("buildLoreData - 해소", () => {
       name: "왕도",
       color: "#22c55e",
       order: 10,
+      path: "왕도.md",
     });
     expect(event.characters[0].color).toBe("#3b82f6");
     expect(event.era?.color).toBe("#a855f7");
@@ -118,7 +129,7 @@ describe("buildLoreData - 해소", () => {
 describe("buildLoreData - 불일치 규칙", () => {
   it("정의 파일에 없는 인물도 기본색·맨 뒤 순서로 보여준다", () => {
     const data = buildLoreData(
-      scan({ characterNames: ["아나이스", "이름없는손님"] }),
+      scan({ characters: notes("아나이스", "이름없는손님") }),
       CONFIG,
     );
 
@@ -128,7 +139,7 @@ describe("buildLoreData - 불일치 규칙", () => {
   });
 
   it("정의 파일에만 있고 노트가 없는 이름을 경고한다", () => {
-    const data = buildLoreData(scan({ characterNames: ["아나이스"] }), CONFIG);
+    const data = buildLoreData(scan({ characters: notes("아나이스") }), CONFIG);
 
     // 지벨린은 정의 파일에 있지만 노트가 없다.
     expect(data.warnings.join()).toContain("지벨린");
@@ -140,7 +151,7 @@ describe("buildLoreData - 불일치 규칙", () => {
   it("그 종류의 노트를 아예 안 쓰면 미아를 따지지 않는다", () => {
     // 인물 노트를 한 장도 안 만든 볼트에서 정의 파일 전체가 경고로 쏟아지면
     // 쓸모가 없다.
-    const data = buildLoreData(scan({ placeNames: ["왕도"] }), CONFIG);
+    const data = buildLoreData(scan({ places: notes("왕도") }), CONFIG);
     expect(data.warnings.join()).not.toContain("아나이스");
   });
 
@@ -157,7 +168,7 @@ describe("buildLoreData - 불일치 규칙", () => {
 
   it("순서를 안 정한 것끼리는 이름순으로 고정한다", () => {
     const data = buildLoreData(
-      scan({ placeNames: ["숲", "강가", "왕도"] }),
+      scan({ places: notes("숲", "강가", "왕도") }),
       CONFIG,
     );
 
@@ -168,7 +179,7 @@ describe("buildLoreData - 불일치 규칙", () => {
 
 describe("buildLoreData - 기간 노트", () => {
   it("loreline: era 노트로만 있는 기간도 목록에 넣는다", () => {
-    const data = buildLoreData(scan({ eraNames: ["제4 성력"] }), CONFIG);
+    const data = buildLoreData(scan({ eras: notes("제4 성력") }), CONFIG);
 
     // 정의 파일에는 제3 성력만 있다. 노트로 만든 기간도 함께 선다.
     expect(data.eras.map((e) => e.name)).toEqual(["제3 성력", "제4 성력"]);
@@ -176,7 +187,7 @@ describe("buildLoreData - 기간 노트", () => {
   });
 
   it("정의 파일에만 있고 노트가 없는 기간을 경고한다", () => {
-    const data = buildLoreData(scan({ eraNames: ["제4 성력"] }), CONFIG);
+    const data = buildLoreData(scan({ eras: notes("제4 성력") }), CONFIG);
     expect(data.warnings.join()).toContain("제3 성력");
   });
 });

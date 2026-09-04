@@ -4,12 +4,17 @@ import type { Character, Place } from "./types";
 
 import { computeLanes, keepExistingLanes } from "./lanes";
 
-function makePlace(id: number, name: string, color: string): Place {
-  return { id: String(id), name, color, order: id * 10 };
+function makePlace(id: number, name: string, color: string, path: string | null = null): Place {
+  return { id: String(id), name, color, order: id * 10, path };
 }
 
-function makeCharacter(id: number, name: string, color: string): Character {
-  return { id: String(id), name, color, order: id * 10 };
+function makeCharacter(
+  id: number,
+  name: string,
+  color: string,
+  path: string | null = null,
+): Character {
+  return { id: String(id), name, color, order: id * 10, path };
 }
 
 const palace = makePlace(1, "왕궁", "#ef4444");
