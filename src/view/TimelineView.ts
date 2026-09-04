@@ -351,8 +351,13 @@ export class TimelineView extends ItemView {
     const box = this.bodyEl.createDiv({ cls: "loreline-error" });
     box.createDiv({ cls: "loreline-error-title", text: "볼 세계를 고르지 않았다." });
 
-    const pick = box.createEl("button", { text: "세계 고르기" });
+    const buttons = box.createDiv({ cls: "loreline-button-row" });
+
+    const pick = buttons.createEl("button", { cls: "mod-cta", text: "세계 고르기" });
     pick.addEventListener("click", () => this.plugin.pickWorldFor(this));
+
+    const create = buttons.createEl("button", { text: "새 세계 만들기" });
+    create.addEventListener("click", () => this.plugin.promptCreateWorld(""));
 
     renderEmpty(box, "loreline.config.json이 놓인 폴더가 하나의 세계가 된다.");
   }

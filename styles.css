@@ -379,3 +379,27 @@
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
 }
+
+/* ---- 새 세계 만들기 ---- */
+
+.loreline-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.loreline-create-world h3 {
+  margin-top: 0;
+}
+
+.loreline-modal-error:not(:empty) {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--text-error, #e5534b);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  overflow-wrap: anywhere;
+}

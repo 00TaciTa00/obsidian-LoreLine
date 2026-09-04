@@ -1,9 +1,11 @@
-import { FuzzySuggestModal, Notice, Plugin, type WorkspaceLeaf } from "obsidian";
+import { FuzzySuggestModal, Notice, Plugin, TFolder, type Menu, type TAbstractFile, type WorkspaceLeaf } from "obsidian";
 
 import { CONFIG_FILE_NAME } from "./loader/config";
+import { createWorld } from "./loader/create-world";
 import { ScanCaches, touchesFolder } from "./loader/scan";
 import { findWorlds, type World } from "./loader/worlds";
 import { DEFAULT_SETTINGS, LoreLineSettingTab, normalizeSettings, type LoreLineSettings } from "./settings";
+import { CreateWorldModal } from "./view/CreateWorldModal";
 import { TimelineView, VIEW_TYPE_LORELINE } from "./view/TimelineView";
 
 /** 변경이 몰아쳐도 다시 읽기는 한 번만 돌게 하는 간격 */
@@ -75,6 +77,12 @@ export default class LoreLinePlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "create-world",
+      name: "새 세계 만들기",
+      callback: () => this.promptCreateWorld(""),
+    });
+
+    this.addCommand({
       id: "reload-timeline",
       name: "타임라인 다시 읽기",
       callback: () => void this.reloadAll({ notify: true }),
@@ -83,6 +91,7 @@ export default class LoreLinePlugin extends Plugin {
     this.addSettingTab(new LoreLineSettingTab(this.app, this));
 
     this.registerVaultWatchers();
+    this.registerFolderMenu();
   }
 
   onunload(): void {
@@ -107,9 +116,9 @@ export default class LoreLinePlugin extends Plugin {
     const worlds = await findWorlds(this.app);
 
     if (worlds.length === 0) {
-      new Notice(
-        `LoreLine: 세계를 찾지 못했다. 폴더에 ${CONFIG_FILE_NAME}을 두면 그 폴더가 하나의 세계가 된다.`,
-      );
+      // 안내만 하고 끝내면 다음 할 일을 스스로 찾아야 한다. 만들 자리를 바로 묻는다.
+      new Notice("LoreLine: 아직 세계가 없다. 하나 만들자.");
+      this.promptCreateWorld("");
       return;
     }
 
@@ -126,11 +135,80 @@ export default class LoreLinePlugin extends Plugin {
     const worlds = await findWorlds(this.app);
 
     if (worlds.length === 0) {
-      new Notice(`LoreLine: 세계를 찾지 못했다. 폴더에 ${CONFIG_FILE_NAME}을 두라.`);
+      new Notice("LoreLine: 아직 세계가 없다. 하나 만들자.");
+      this.promptCreateWorld("");
       return;
     }
 
     new WorldSuggestModal(this, worlds, (world) => void view.showWorld(world)).open();
+  }
+
+  /**
+   * 새 세계를 만들 자리를 묻고, 만들고, 바로 연다.
+   *
+   * 만들기가 실패하면 사유를 창에 돌려주고 창은 열어 둔다. 이미 세계인 폴더를
+   * 골랐을 때 창이 닫혀 버리면 무엇이 잘못됐는지 알 수 없다.
+   */
+  promptCreateWorld(folder: string): void {
+    new CreateWorldModal(this.app, folder, async (request) => {
+      try {
+        const world = await createWorld(this.app, request);
+        new Notice(`LoreLine: 세계 "${world.name}"을 만들었다.`);
+        await this.revealWorld(world);
+        return null;
+      } catch (error) {
+        return error instanceof Error ? error.message : String(error);
+      }
+    }).open();
+  }
+
+  /** 그 폴더가 이미 세계인지 (정의 파일이 있는지) */
+  private isWorldFolder(folder: TFolder): boolean {
+    const path = folder.path === "/" ? CONFIG_FILE_NAME : `${folder.path}/${CONFIG_FILE_NAME}`;
+    return this.app.vault.getAbstractFileByPath(path) !== null;
+  }
+
+  /**
+   * 폴더 우클릭 메뉴.
+   *
+   * 세계를 만드는 자리가 곧 폴더이므로, 폴더에서 시작하는 것이 가장 짧다.
+   * 이미 세계인 폴더에서는 만들기 대신 열기를 준다.
+   */
+  private registerFolderMenu(): void {
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
+        if (!(file instanceof TFolder)) return;
+
+        if (this.isWorldFolder(file)) {
+          menu.addItem((item) =>
+            item
+              .setTitle("LoreLine 타임라인 열기")
+              .setIcon("git-branch")
+              .onClick(() => void this.openFolderWorld(file)),
+          );
+          return;
+        }
+
+        menu.addItem((item) =>
+          item
+            .setTitle("여기에 LoreLine 세계 만들기")
+            .setIcon("git-branch")
+            .onClick(() => this.promptCreateWorld(file.path === "/" ? "" : file.path)),
+        );
+      }),
+    );
+  }
+
+  /** 우클릭한 폴더의 세계를 연다. */
+  private async openFolderWorld(folder: TFolder): Promise<void> {
+    const wanted = folder.path === "/" ? "" : folder.path;
+    const world = (await findWorlds(this.app)).find((candidate) => candidate.folder === wanted);
+
+    if (!world) {
+      new Notice("LoreLine: 그 폴더의 세계를 찾지 못했다.");
+      return;
+    }
+    await this.revealWorld(world);
   }
 
   /** 그 세계를 보는 탭이 이미 있으면 그리로 가고, 없으면 새로 연다. */
