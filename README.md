@@ -1,355 +1,369 @@
 # LoreLine for Obsidian
 
-볼트의 마크다운 노트를 모아 **시간별 / 공간별 / 인물별** 서사 타임라인으로
-보여주는 옵시디언 플러그인이다. 웹앱 [LoreLine](https://github.com/00TaciTa00/LoreLine)의
-순수 계산 로직을 옮겨 오고, 저장소만 데이터베이스에서 볼트로 바꿨다.
+*English · [한국어](README.ko.md)*
 
-**읽기 전용이다.** 뷰에서 사건을 만들거나 고치거나 순서를 바꾸지 않는다. 창작은
-마크다운에서 하고, 이 플러그인은 그것을 다르게 보여 주기만 한다. 볼트에 쓰는
-것은 새 세계를 만들 때의 정의 파일 한 장뿐이다.
+Read the markdown notes in your vault as a narrative timeline — **by time, by place,
+by character**. The pure timeline logic is ported from the
+[LoreLine](https://github.com/00TaciTa00/LoreLine) web app; only the storage layer
+changed, from a database to your vault.
 
-한 볼트에 **세계를 여럿** 둘 수 있다. `loreline.config.json`을 둔 폴더가 각각
-하나의 세계가 되고, 탭을 나눠 나란히 본다.
+**It is read-only.** The views never create, edit, or reorder your events. You write
+in markdown; this plugin only shows it back to you differently. The one thing it
+writes is the definition file when you create a new world.
 
-## 왜 읽기 전용인가
+One vault can hold **many worlds**. Any folder containing `loreline.config.json` is a
+world of its own, and each opens in its own tab.
 
-세계관 자료는 이미 볼트에 있다. 인물 노트에는 관계와 설정이, 사건 노트에는
-장면이 적혀 있고, 옵시디언의 링크·백링크·검색이 그 위에서 이미 잘 돈다. 여기에
-필요했던 것은 또 하나의 편집기가 아니라 **가로축**이다 — 같은 시각에 다른
-장소에서 무슨 일이 있었는지 한눈에 보는 시선.
+## Why read-only
 
-그래서 이 플러그인은 자기 데이터를 갖지 않는다. 노트를 고치면 뷰가 따라온다.
-플러그인을 지워도 남는 것은 그대로 마크다운이다.
+Your worldbuilding already lives in the vault. Character notes hold relationships and
+background; event notes hold scenes; Obsidian's links, backlinks, and search already work
+well on top of them. What was missing wasn't another editor — it was a **horizontal
+axis**: seeing what happened elsewhere at the same moment.
 
-## 세 가지 보기
+So the plugin keeps no data of its own. Edit a note and the view follows. Remove the
+plugin and what remains is still just markdown.
 
-뷰는 하나이고 상단 토글로 내용만 바뀐다.
+## The three views
 
-| 보기 | 세로축 | 가로축 | 쓰임 |
-|------|--------|--------|------|
-| **시간별** | 기간 → 작중 시각 | 없음 | 전체 흐름을 훑는다. 인물·장소를 안 적은 사건도 모두 나온다 |
-| **공간별** | 작중 시각 | 장소 | 같은 시각에 여러 곳에서 벌어진 일을 나란히 본다 |
-| **인물별** | 작중 시각 | 인물 | 인물별로 언제 무대에 서는지 본다 |
+One view, one toolbar toggle; only the contents change.
 
-격자(공간별·인물별)에서 **같은 작중 시각을 가진 사건은 한 행으로 묶인다.**
-"동시간대"를 가로로 펼쳐 보이는 것이 격자의 목적이기 때문이다.
+| View | Vertical axis | Horizontal axis | Good for |
+|------|---------------|-----------------|----------|
+| **Time** | era → in-story time | none | Skimming the whole flow. Events with no place or character still appear |
+| **Place** | in-story time | places | Seeing what happened in several places at once |
+| **Character** | in-story time | characters | Seeing when each character is on stage |
 
-### 눌러서 문서로
+In the grids (Place and Character), **events sharing the same in-story time are merged
+into one row** — showing simultaneity across columns is the whole point of a grid.
 
-뷰에 뜬 이름은 모두 그 노트로 가는 링크다.
+### Click a name to open its note
 
-| 누르는 곳 | 가는 곳 |
-|-----------|---------|
-| 사건 카드 | 그 사건 노트 |
-| 격자의 열 이름 (인물·장소) | 그 인물·장소 노트 |
-| 격자 시간 칸의 기간 이름 | 그 기간 노트 |
-| 시간별 뷰의 기간 머리글 | 그 기간 노트 |
+Every name in a view links to its note.
 
-**Ctrl/Cmd + 클릭**이나 **가운데 클릭**이면 새 탭에서 열린다. `Tab`으로 옮겨
-`Enter`로도 열 수 있다.
+| Click | Opens |
+|-------|-------|
+| An event card | that event note |
+| A grid column header (character / place) | that character or place note |
+| The era in a grid's time cell | that era note |
+| The era heading in the Time view | that era note |
 
-노트가 없는 이름 — 정의 파일에만 적었거나 사건이 이름만 가리키는 경우 — 은
-링크가 되지 않는다. 눌러 봤자 갈 곳이 없는 자리를 누르게 두지 않는다.
+**Ctrl/Cmd-click** or **middle-click** opens in a new tab. `Tab` to it and press
+`Enter` to open with the keyboard.
 
-## 설치
+Names without a note — defined only in the config file, or referenced only by an event
+— are not links. There is nothing to click through to, so nothing invites the click.
 
-커뮤니티 플러그인 목록에는 아직 없다. 직접 넣는다.
+## Install
+
+Not in the community plugin list yet. Install it by hand.
+
+Download `main.js`, `manifest.json`, and `styles.css` from a
+[release](../../releases) and drop them into
+`<vault>/.obsidian/plugins/loreline/`. Then enable **LoreLine** under
+Settings → Community plugins.
+
+To build from source instead:
 
 ```bash
 npm install
-npm run deploy          # 검사 → 빌드 → 볼트로 복사
+npm run deploy          # check → build → copy into the vault
 ```
 
-기본 대상은 `C:/Obsidian/Hobby`다. 다른 볼트라면 `OBSIDIAN_VAULT`로 바꾼다.
+`npm run deploy` targets `C:/Obsidian/Hobby` by default. Point it elsewhere with
+`OBSIDIAN_VAULT`:
 
 ```powershell
-$env:OBSIDIAN_VAULT = "D:/내볼트"; npm run deploy   # PowerShell
+$env:OBSIDIAN_VAULT = "D:/MyVault"; npm run deploy   # PowerShell
 ```
 
 ```bash
-OBSIDIAN_VAULT="D:/내볼트" npm run deploy           # bash
+OBSIDIAN_VAULT="D:/MyVault" npm run deploy           # bash
 ```
 
-복사되는 것은 `main.js`, `manifest.json`, `styles.css` 세 개이고, 위치는
-`<볼트>/.obsidian/plugins/obsidian-loreline/`이다. 옵시디언 설정 → 커뮤니티
-플러그인에서 **LoreLine**을 켠다.
+## Worlds
 
-## 세계
-
-**`loreline.config.json`이 놓인 폴더가 곧 하나의 세계다.** 설정에 목록을 만들지
-않는다 — 폴더를 만들 때마다 설정을 여는 대신, 폴더 옆에 파일 하나를 둔다.
+**A folder containing `loreline.config.json` is a world.** There is no list to
+maintain in settings — instead of opening settings every time you add a folder, you
+drop one file next to it.
 
 ```
-볼트/
-├ 상실의 유산/
-│  ├ loreline.config.json   ← 세계 "상실의 유산"
-│  └ 등장인물/ 시나리오/ ...
-├ 핀타디네/
-│  ├ loreline.config.json   ← 세계 "핀타디네"
-│  └ 사건/ 인물/ 장소/ 기간/
-└ Evernote/                 ← 정의 파일 없음. 세계가 아니다
+vault/
+├ Lost Legacy/
+│  ├ loreline.config.json   ← world "Lost Legacy"
+│  └ Cast/ Scenario/ ...
+├ Pintadine/
+│  ├ loreline.config.json   ← world "Pintadine"
+│  └ Events/ Characters/ Places/ Eras/
+└ Evernote/                 ← no definition file, not a world
 ```
 
-### 새 세계 만들기
+### Creating a world
 
-셋 중 아무 길이나 쓴다.
+Any of these:
 
-- **폴더 우클릭 → "여기에 LoreLine 세계 만들기"** — 가장 짧다
-- 명령어 팔레트 → `LoreLine: 새 세계 만들기`
-- 세계가 하나도 없을 때 리본을 누르면 바로 만들기 창이 뜬다
+- **Right-click a folder → "Create a LoreLine world here"** — shortest path
+- Command palette → `LoreLine: Create a new world`
+- With no worlds yet, clicking the ribbon icon opens the create dialog directly
 
-폴더(없으면 만든다)와 이름(비우면 폴더명)을 묻고, 세계의 뼈대를 놓는다.
+It asks for a folder (created if missing) and a name (folder name if left blank), then
+lays down the skeleton:
 
 ```
-새 작품/
+New Work/
 ├ loreline.config.json
-├ 사건/예시 사건.md      ← 아래 셋을 이름으로 가리킨다
+├ 사건/예시 사건.md      ← references the three below by name
 ├ 인물/예시 인물.md
 ├ 장소/예시 장소.md
 └ 기간/예시 기간.md
 ```
 
-예시 사건이 나머지 셋을 가리키므로 **만들자마자 타임라인에 사건 하나가 실제로
-서 있다.** 형식을 눈으로 한 번 보고 지우면 된다.
+Because the sample event references the other three, **a timeline with one real event
+is standing the moment you create the world.** Look at the format once, then delete
+them.
 
-폴더 이름은 frontmatter의 `loreline` 값과 1:1로 맞췄다(사건=event, 인물=character,
-장소=place, 기간=era). 다른 배치를 쓰고 싶으면 그냥 옮기면 된다 — 플러그인은
-폴더 이름을 보지 않고 frontmatter만 본다.
+The folder names map one-to-one to the `loreline` frontmatter values (사건=event,
+인물=character, 장소=place, 기간=era). Rearrange them however you like — the plugin
+never looks at folder names, only at frontmatter.
 
-지키는 것:
+What it will not do:
 
-- **이미 정의 파일이 있는 폴더는 건드리지 않는다** — 덮어쓰면 그 세계의 색과
-  순서가 통째로 날아간다
-- **이미 있는 파일은 어떤 것도 덮지 않는다** — 같은 이름의 예제 자리가 차 있으면
-  건너뛴다
-- **`loreline:` 노트가 이미 있는 폴더에는 예제를 넣지 않는다** — 노트를 먼저 써
-  두고 나중에 세계로 선언하는 경우라 형식은 이미 알고 있고, 남의 폴더에 예시를
-  흩뿌릴 이유가 없다
+- **Touch a folder that already has a definition file** — overwriting would destroy
+  that world's colors and ordering
+- **Overwrite any existing file** — if a sample's filename is taken, it skips it
+- **Add samples to a folder that already has `loreline:` notes** — you wrote notes
+  first and declared the world later, so you know the format already; scattering
+  examples into your own folder helps nobody
 
-손으로 만들어도 된다. 색을 아직 안 정했다면 **`{}` 한 줄이면 세계가 선다.**
+You can also create one by hand. `{}` on a single line is enough:
 
 ```bash
-echo "{}" > "새 작품/loreline.config.json"
+echo "{}" > "New Work/loreline.config.json"
 ```
 
-이름은 폴더명을 쓴다. 다르게 부르고 싶으면 정의 파일에 적는다.
+The name defaults to the folder name. To call it something else, say so in the
+definition file:
 
 ```json
-{ "name": "핀타디네 데랑 이야기", "characters": [] }
+{ "name": "The Story of Pintadine D'Erang", "characters": [] }
 ```
 
-최상위에 두면 볼트 전체가 한 세계가 되고, 이름은 볼트 이름을 쓴다.
+Put the file at the vault root and the whole vault becomes one world, named after the
+vault.
 
-## 여는 법
+## Opening a timeline
 
-- 왼쪽 리본의 가지 모양 아이콘
-- 폴더 우클릭 → "LoreLine 타임라인 열기" (그 폴더가 세계일 때)
-- 명령어 팔레트 → `LoreLine: 타임라인 열기`
-- 명령어 팔레트 → `LoreLine: 세계를 골라 새 탭에서 열기`
-- 명령어 팔레트 → `LoreLine: 새 세계 만들기`
-- 명령어 팔레트 → `LoreLine: 타임라인 다시 읽기`
+- The branch icon in the left ribbon
+- Right-click a folder → "Open LoreLine timeline" (when that folder is a world)
+- Command palette → `LoreLine: Open timeline`
+- Command palette → `LoreLine: Pick a world and open it in a new tab`
+- Command palette → `LoreLine: Create a new world`
+- Command palette → `LoreLine: Reload timeline`
 
-세계가 하나뿐이면 바로 열린다. 여럿이면 고르는 목록이 뜬다. 이미 그 세계를 보는
-탭이 있으면 새로 열지 않고 그리로 간다.
+With one world it opens straight away; with several you get a picker. If a tab is
+already showing that world, it goes there instead of opening another.
 
-탭 하나가 세계 하나를 본다. 여럿을 나란히 보려면 탭을 나눠 연다. **탭이 보던
-세계·보기 모드·감춘 열은 옵시디언을 껐다 켜도 그대로 돌아온다.** 다른 세계로
-바꾸려면 상단의 세계 이름을 누른다.
+One tab shows one world. To see several side by side, open several tabs. **A tab
+remembers its world, view mode, and hidden columns across restarts.** Click the world
+name in the toolbar to switch that tab to another world.
 
-## 노트 쓰는 법
+## Writing the notes
 
-세 곳에 나누어 적고, **이름 문자열**로 잇는다. 인물 노트의 파일명과 사건
-frontmatter의 `characters` 항목이 같으면 같은 인물이다.
+Three places, joined by **name strings**. A character note's filename and an event's
+`characters` entry refer to the same character when the text matches.
 
-### 1. 사건 노트 — 사건 하나에 노트 하나
+### 1. Event notes — one note per event
 
 ````markdown
 ---
 loreline: event
-displayTime: "789년"      # 화면에 그대로 찍히는 작중 시각. 자유 문자열
-sortKey: 3000             # 정렬 전용 숫자. 오름차순
-era: "제3 성력"            # 기간 이름. 없으면 생략
-characters: ["아나이스", "지벨린"]
-places: ["왕도"]
-color: "#3b82f6"          # 선택. 없으면 기간 색을 쓴다
+displayTime: "789 AR"     # printed as written. Free-form text
+sortKey: 3000             # sorting only. Ascending
+era: "Third Sacred Age"   # era name. Omit if none
+characters: ["Anais", "Zibelin"]
+places: ["The Capital"]
+color: "#3b82f6"          # optional. Falls back to the era color
 ---
-# 왕도 함락
+# The Fall of the Capital
 
-성문이 열렸다.
+The gates opened.
 ````
 
-- **제목**은 맨 앞 H1, 없으면 파일명.
-- **설명**은 frontmatter와 맨 앞 H1을 뺀 나머지 본문. 카드에는 120자까지 접힌다.
-- `displayTime`은 계산에 쓰이지 않는다. `"3년째 겨울"`, `"개막 직전"` 무엇이든 좋다.
-- 다만 **글자가 정확히 같아야 한 행으로 묶인다.** `"3년째 겨울"`과
-  `"3년째 겨울(밤)"`은 다른 행이다.
+- **Title** is the leading H1, or the filename if there is none.
+- **Description** is the body minus the frontmatter and that leading H1. Cards fold it
+  at 120 characters.
+- `displayTime` is never parsed. `"Winter of year 3"`, `"just before the curtain"` —
+  anything goes.
+- But **only exactly equal strings merge into one row.** `"Winter of year 3"` and
+  `"Winter of year 3 (night)"` are different rows.
 
-### 2. 인물·장소·기간 노트 — 존재를 알리는 자리
+### 2. Character / place / era notes — declaring that a name exists
 
 ````markdown
 ---
-loreline: character     # place | era 도 같은 방식
+loreline: character     # place | era work the same way
 ---
-아나이스에 대해 하고 싶은 모든 이야기. 링크도 백링크도 평소처럼.
+Everything you want to say about Anais. Links and backlinks as usual.
 ````
 
-파일명이 곧 이름이다. 본문은 플러그인이 읽지 않으므로 자유롭게 쓴다. 이 노트가
-있어야 **사건이 하나도 없는 인물·장소도 격자에 열로 선다.**
+The filename is the name. The body is never read by the plugin, so write freely. These
+notes are what make **a character or place with no events at all still appear as a
+column.**
 
-### 3. `loreline.config.json` — 색과 순서
+### 3. `loreline.config.json` — colors and ordering
 
 ```json
 {
   "characters": [
-    { "name": "아나이스", "color": "#3b82f6", "order": 10 },
-    { "name": "지벨린",   "color": "#ef4444", "order": 20 }
+    { "name": "Anais",   "color": "#3b82f6", "order": 10 },
+    { "name": "Zibelin", "color": "#ef4444", "order": 20 }
   ],
   "places": [
-    { "name": "왕도", "color": "#22c55e", "order": 10 }
+    { "name": "The Capital", "color": "#22c55e", "order": 10 }
   ],
   "eras": [
-    { "name": "제3 성력", "color": "#a855f7", "order": 10 }
+    { "name": "Third Sacred Age", "color": "#a855f7", "order": 10 }
   ]
 }
 ```
 
-`order`는 격자의 열 순서와 시간별 뷰의 구획 순서를 정한다. 오름차순이고, 같거나
-없으면 이름순으로 밀린다. `name`은 세계의 표시 이름이다 (위의 "세계" 참고).
+`order` sets grid column order and Time-view section order. Ascending; ties and
+missing values fall back to name order. `name` is the world's display name (see
+"Worlds" above).
 
-**이 파일의 위치가 세계의 경계다.** 스캔은 이 파일이 놓인 폴더 아래에서만 돈다.
+**This file's location is the world's boundary.** Scanning only descends from the
+folder that holds it.
 
-> **왜 `.md` frontmatter가 아니라 JSON인가**
-> 옵시디언의 YAML 파서가 객체 배열을 안정적으로 다루지 못한다. 색·순서는 한
-> 곳에서 통째로 재배열하는 값이라 파서를 믿을 수 있어야 했다.
+> **Why JSON and not `.md` frontmatter**
+> Obsidian's YAML parser is not dependable with arrays of objects. Colors and ordering
+> get rearranged wholesale in one place, so the parser had to be trustworthy.
 
-## 이름이 어긋났을 때
+## When names don't line up
 
-세 곳을 이름으로 잇다 보면 어긋나는 순간이 온다. 규칙은 하나다 —
-**아무것도 지우지 않고, 대신 알린다.**
+Joining three places by name means they will drift apart eventually. One rule —
+**delete nothing, say something.**
 
-| 상황 | 동작 |
-|------|------|
-| 노트는 있는데 정의 파일에 없다 | 기본색(`#6b7280`)·맨 뒤 순서로 보여준다 |
-| 정의 파일엔 있는데 노트가 없다 | 그대로 쓰되 경고한다 (오타·삭제 탐지) |
-| 사건만 참조하고 노트도 정의도 없다 | 목록에 넣는다. 빼면 그 사건이 격자에서 통째로 사라진다 |
-| 그 종류의 노트를 한 장도 안 썼다 | 미아 검사를 하지 않는다 |
+| Situation | What happens |
+|-----------|--------------|
+| Note exists, not in the config file | Shown with the default color (`#6b7280`), ordered last |
+| In the config file, no note | Used anyway, with a warning (catches typos and deletions) |
+| Referenced only by an event, no note and no config entry | Added to the list. Dropping it would erase that event from the grid entirely |
+| No notes of that kind at all | No orphan check |
 
-마지막 줄이 중요하다. 인물 노트를 쓰지 않기로 했을 뿐인데 정의 파일 전체가
-경고로 쏟아지면 경고 자체가 쓸모없어진다.
+That last row matters. If you simply decided not to write character notes, having the
+entire config file pour out as warnings would make warnings worthless.
 
-## 경고
+## Warnings
 
-상단에 **`경고 N`** 단추가 뜨면 눌러서 펼친다. 뷰를 막지는 않는다 — 색을
-깜빡했어도 나머지는 보여야 한다.
+A **`경고 N`** button appears in the toolbar; click to expand. Warnings never block the
+view — forgetting a color shouldn't hide everything else.
 
-- `대상 폴더 "..."를 찾지 못했다` — 설정의 폴더 이름 오타
-- `... : displayTime이 없어 건너뛴다` — 그 사건은 뷰에 나오지 않는다
-- `... : sortKey가 숫자가 아니라 맨 뒤로 보낸다`
-- `정렬값 3000: 사건 2건이 함께 쓴다 — ...` — 순서가 경로순으로 밀려 의도와
-  다르게 설 수 있다
-- `"제3 성력 - 1년"이 정렬값 순서상 떨어져 있어 격자에서 2개 행으로 갈린다`
-- `정의 파일의 인물 "..."에 해당하는 노트가 없다`
+- The target folder could not be found
+- `displayTime` missing, so that event is skipped
+- `sortKey` is not a number, so that event goes last
+- Several events share one `sortKey`, so their order falls back to path order
+- One in-story time is split across several grid rows because the sort keys separate it
+- A name in the config file has no note
 
-### 정렬값 갈림에 대하여
+### About split rows
 
-격자는 **잇달아 오는** 사건만 한 행으로 묶는다. 시간축이 흐르는 순서라 떨어진
-것을 합치면 순서가 깨지기 때문이다. 그래서 `sortKey`를 잘못 적으면 같은 시각이
-여러 행으로 갈라진다. 채번이 자동이 아니라 손으로 적는 구조라 흔히 생기는
-일이고, 그래서 미리 알린다.
+The grid merges **only consecutive** events into a row. Time is a flowing axis, so
+merging things that are apart would break the order. Get a `sortKey` wrong and one
+in-story time splits across rows. Numbering is manual here, so this happens; the
+loader warns before you notice it visually.
 
-`sortKey`는 **1000 단위로 띄워 두기를 권한다.** 사이에 사건을 끼울 때 번호를
-다시 매기지 않아도 된다.
+**Leave gaps of 1000 in `sortKey`.** Then inserting an event between two others needs
+no renumbering.
 
-## 설정
+## Settings
 
-| 항목 | 기본값 | 설명 |
-|------|--------|------|
-| 자동 다시 읽기 | 켬 | 노트나 정의 파일이 바뀌면 다시 그린다 (500ms 묶음) |
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| Auto reload | On | Redraw when a note or definition file changes (debounced 500 ms) |
 
-그게 전부다. 세계 목록은 볼트에서 찾으므로 설정할 것이 없다. 설정 탭 아래쪽에
-지금 찾은 세계가 나열되니, 만든 세계가 안 보이면 거기서 확인한다.
+That's all of it. World lists come from the vault, so there is nothing to configure.
+The settings tab lists the worlds it currently finds — check there if one you made
+isn't showing up.
 
-다시 읽기는 **바뀐 파일이 속한 세계의 탭만** 건드린다. 세계 넷을 열어 두고 한
-곳의 노트를 고쳤다고 넷을 다 훑지는 않는다.
+Reloading touches **only tabs whose world contains the changed file.** Four worlds open
+and one note edited does not rescan all four.
 
-## 볼트 구성 예
-
-```
-핀타디네/                   ← 정의 파일이 있으니 세계 하나
-  loreline.config.json
-  사건/
-    탄생.md
-    솔로몬 소환.md
-  인물/
-    핀타디네 데랑.md
-  장소/
-    칼데아.md
-  기간/
-    제1 생.md
-```
-
-폴더 이름과 배치는 자유다. 플러그인은 `loreline:` frontmatter만 본다.
-
-## 개발
+## Development
 
 ```bash
 npm run dev       # esbuild watch
-npm run check     # 타입체크 + 테스트 (187개)
-npm run build     # 타입체크 + 프로덕션 번들
-npm run deploy    # check → build → 볼트로 복사
-npm test          # vitest 한 번
+npm run check     # typecheck + tests (187)
+npm run build     # typecheck + production bundle
+npm run deploy    # check → build → copy into the vault
+npm test          # vitest once
 ```
 
-### 구조
+### Layout
 
 ```
 src/
-  lib/        LoreLine에서 이식한 순수 계산. 프레임워크 의존 없음
-  loader/     볼트 → 데이터. 세계 탐색·스캔·설정·해소·진단
-  view/       데이터 → 화면. 렌더러 셋과 뷰 하나 (탭 하나가 세계 하나)
-  testing/    옵시디언 껍데기와 DOM 셰임. 번들에는 안 들어간다
-tools/preview/  옵시디언 없이 뷰를 HTML로 뽑는다
+  lib/        Pure computation ported from LoreLine. No framework dependencies
+  loader/     Vault → data. World discovery, scanning, config, resolution, diagnostics
+  view/       Data → screen. Three renderers and one view (one tab, one world)
+  testing/    Obsidian stub and DOM shim. Never enters the bundle
+tools/preview/    Render the views to HTML without Obsidian
+tools/import-world/  Move a world from the LoreLine web app into a vault
 ```
 
-흐름은 한 방향이다: `findWorlds → scan → config → resolve → render`. 로더가 만든
-`LoreData` 하나가 렌더러 셋에 그대로 넘어간다.
+The flow runs one way: `findWorlds → scan → config → resolve → render`. One `LoreData`
+from the loader goes to all three renderers unchanged.
 
-스캔 캐시는 **세계마다 따로** 둔다(`ScanCaches`). 하나를 나눠 쓰면 스캔 끝의
-정리("이번에 못 본 경로를 지운다")가 서로를 잡아먹어, 두 세계를 번갈아 볼 때마다
-적중률이 0이 된다.
+Scan caches are kept **per world** (`ScanCaches`). Sharing one cache would let each
+scan's cleanup step ("drop paths not seen this time") eat the other's entries, driving
+the hit rate to zero whenever you alternate between two worlds.
 
-### 옵시디언 없이 화면 보기
+### Previewing without Obsidian
 
 ```bash
 npx esbuild tools/preview/main.ts --bundle --platform=node --format=esm \
   --alias:obsidian=./src/testing/obsidian-stub.ts --outfile=tools/preview/out.mjs
-node tools/preview/out.mjs "C:/Obsidian/Hobby" "핀타디네" preview.html
+node tools/preview/out.mjs "C:/Obsidian/Hobby" "Pintadine" preview.html
 ```
 
-실제 렌더러와 실제 `styles.css`로 그리고, 데이터도 진짜 볼트에서 읽는다.
-`preview.html`(세 뷰 한 장)과 뷰별 세 장이 나온다. 옵시디언 테마 변수만 흉내 낸
-값이라 색감은 쓰는 테마에 따라 조금 다르다.
+It uses the real renderers and the real `styles.css`, and reads a real vault. You get
+`preview.html` (all three views) plus one file per view. Only the Obsidian theme
+variables are imitated, so colors differ slightly from your actual theme.
 
-**이 도구가 못 보는 것**: 레이아웃 계산. 높이·스크롤·sticky처럼 브라우저가
-실제로 재어야 아는 것은 여기서도, 단위 테스트에서도 잡히지 않는다. 그런 변경은
-옵시디언에서 직접 확인해야 한다.
+**What this cannot show you:** layout. Heights, scrolling, and sticky positioning need
+a browser to measure them, and neither this tool nor the unit tests will catch a
+mistake there. Check those in Obsidian.
 
-### 테스트
+### Testing
 
-옵시디언 API에 기대는 코드도 테스트한다. vitest가 `obsidian` 모듈을
-`src/testing/obsidian-stub.ts`로 돌려놓기 때문이다. 렌더러는 같은 폴더의 DOM
-셰임에 그려 구조와 속성을 확인한다.
+Code that leans on the Obsidian API is tested too, because vitest swaps the `obsidian`
+module for `src/testing/obsidian-stub.ts`. Renderers draw into the DOM shim in the same
+folder, where structure and attributes can be asserted.
 
-## 이식하지 않은 것
+## Releasing
 
-- `resolveSortKeyForInsert`, `rebalanceTimeline` — 채번·재정렬. 읽기 전용이라 필요 없다
-- vis-timeline, React Query, Drizzle, PostgreSQL — 저장소와 렌더링을 통째로 바꿨다
+The version has to match in three places (`package.json`, `manifest.json`,
+`versions.json`). `npm version` keeps them in step.
 
-`lib/timeline`의 계산 함수(`formatDisplayTime`, `computeLanes`, `buildGrid`,
-`buildEraGroups`)는 **본문을 한 줄도 고치지 않고** 옮겼다. 타입에서 DB 컬럼을
-걷어내고 `id`를 이름 문자열로 바꾼 것이 전부다.
+```bash
+npm version patch      # updates all three, commits, and tags
+git push --follow-tags
+```
 
-## 라이선스
+Pushing the tag runs GitHub Actions, which checks, builds, and publishes a release with
+`main.js`, `manifest.json`, and `styles.css` attached. **The tag must equal the version
+exactly** — prefix it as `v0.1.0` and Obsidian will not find it.
 
-원본 [LoreLine](https://github.com/00TaciTa00/LoreLine)은 MIT다. 이 레포에는 아직
-`LICENSE` 파일을 두지 않았다 — 공개 배포 전에 정할 것.
+## Not ported
+
+- `resolveSortKeyForInsert`, `rebalanceTimeline` — numbering and rebalancing. Read-only
+  needs neither
+- vis-timeline, React Query, Drizzle, PostgreSQL — storage and rendering were replaced
+  outright
+
+The computation in `lib/timeline` (`formatDisplayTime`, `computeLanes`, `buildGrid`,
+`buildEraGroups`) was moved **without changing a single line of its bodies**. Only the
+types changed: database columns stripped, `id` turned into the name string.
+
+## License
+
+MIT, following the original [LoreLine](https://github.com/00TaciTa00/LoreLine).

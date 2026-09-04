@@ -1,0 +1,41 @@
+name: Release
+
+# 태그를 밀면 릴리스를 만든다. 태그 이름은 manifest의 version과 정확히 같아야
+# 한다 ("v" 접두사를 붙이면 옵시디언이 찾지 못한다).
+on:
+  push:
+    tags: ["*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+
+      - name: 태그와 manifest 버전이 같은지 확인
+        run: |
+          MANIFEST=$(node -p "require('./manifest.json').version")
+          if [ "$GITHUB_REF_NAME" != "$MANIFEST" ]; then
+            echo "태그($GITHUB_REF_NAME)와 manifest($MANIFEST)의 버전이 다르다." >&2
+            exit 1
+          fi
+
+      - run: npm run check
+      - run: npm run build
+
+      # 세 파일을 따로 붙인다. zip으로 묶으면 옵시디언이 읽지 못한다.
+      - name: 릴리스
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            main.js manifest.json styles.css

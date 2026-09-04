@@ -1,9 +1,10 @@
 {
-  "id": "obsidian-loreline",
+  "id": "loreline",
   "name": "LoreLine",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "볼트의 마크다운 노트를 시간별·공간별·인물별 서사 타임라인으로 보여준다.",
-  "author": "seoyoung720",
+  "description": "Read your markdown notes as a narrative timeline — by time, by place, by character.",
+  "author": "00tacita00",
+  "authorUrl": "https://github.com/00TaciTa00",
   "isDesktopOnly": false
 }
