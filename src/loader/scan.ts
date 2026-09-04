@@ -48,11 +48,16 @@ export function createScanCache(): ScanCache {
 /** 한 번에 열어 둘 파일 수. 볼트가 커도 핸들이 한꺼번에 몰리지 않게 한다. */
 const READ_BATCH = 32;
 
-/** 폴더 경로 아래에 있는 파일인지. 빈 경로는 볼트 전체를 뜻한다. */
+/**
+ * 폴더 경로 아래에 있는 파일인지. 빈 경로는 볼트 전체를 뜻한다.
+ *
+ * 설정에서 이미 다듬지만 여기서도 앞뒤 슬래시를 벗긴다. 예전에 저장해 둔
+ * 설정이 그대로 넘어와도 조용히 빈 화면이 되면 안 된다.
+ */
 function isInFolder(path: string, folder: string): boolean {
-  if (!folder) return true;
-  const prefix = folder.endsWith("/") ? folder : `${folder}/`;
-  return path.startsWith(prefix);
+  const trimmed = folder.replace(/^\/+|\/+$/g, "");
+  if (!trimmed) return true;
+  return path.startsWith(`${trimmed}/`);
 }
 
 /** frontmatter의 loreline 값이 아는 것인지 */

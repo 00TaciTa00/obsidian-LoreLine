@@ -37,7 +37,9 @@ export class LoreLineSettingTab extends PluginSettingTab {
           .setPlaceholder("예: 핀타디네")
           .setValue(this.plugin.settings.targetFolder)
           .onChange(async (value) => {
-            this.plugin.settings.targetFolder = value.trim().replace(/\/+$/, "");
+            // 앞뒤 슬래시를 모두 벗긴다. 볼트 경로는 "/"로 시작하지 않아서,
+            // "/핀타디네"라고 적으면 어떤 파일도 안 걸리고 빈 화면이 된다.
+            this.plugin.settings.targetFolder = value.trim().replace(/^\/+|\/+$/g, "");
             await this.plugin.saveSettings();
           }),
       );

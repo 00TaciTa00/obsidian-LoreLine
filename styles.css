@@ -1,15 +1,28 @@
 /* LoreLine — 옵시디언 테마 변수를 그대로 쓰고, 색만 노트에서 받아 온다. */
 
+/*
+ * 스크롤은 본문만 한다.
+ *
+ * 뷰 전체가 흐르면 상단 토글이 위로 밀려 올라가고, 격자의 sticky 헤더도
+ * 붙을 곳이 없어진다. 뷰를 세로 flex로 세우고 본문에만 스크롤을 준다.
+ * (min-height: 0이 없으면 flex 자식이 내용만큼 늘어나 스크롤이 생기지 않는다.)
+ */
+.loreline-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
 .loreline-view .loreline-toolbar {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--background-modifier-border);
-  position: sticky;
-  top: 0;
   background: var(--background-primary);
-  z-index: 2;
 }
 
 .loreline-toggle {
@@ -41,6 +54,8 @@
 }
 
 .loreline-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 12px;
   overflow: auto;
 }

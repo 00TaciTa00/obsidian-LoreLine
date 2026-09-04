@@ -97,7 +97,8 @@ function findDuplicateSortKeys(events: EventItem[]): string[] {
   for (const [sortKey, bucket] of byKey) {
     if (bucket.length < 2) continue;
     const titles = bucket.map((event) => event.title).join(", ");
-    warnings.push(`정렬값 ${sortKey}을 사건 ${bucket.length}건이 함께 쓴다: ${titles}`);
+    // 숫자 뒤 조사는 읽는 방식에 따라 을/를이 갈린다. 아예 붙이지 않는다.
+    warnings.push(`정렬값 ${sortKey}: 사건 ${bucket.length}건이 함께 쓴다 — ${titles}`);
   }
   return warnings;
 }

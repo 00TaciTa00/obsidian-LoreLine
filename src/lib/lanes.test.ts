@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Character, Place } from "./types";
 
-import { computeLanes } from "./lanes";
+import { computeLanes, keepExistingLanes } from "./lanes";
 
 function makePlace(id: number, name: string, color: string): Place {
   return { id: String(id), name, color, order: id * 10 };
@@ -42,5 +42,29 @@ describe("computeLanes", () => {
   it("해당 축에 등록된 것이 없으면 열도 없다", () => {
     expect(computeLanes("place", [], [eirin])).toEqual([]);
     expect(computeLanes("character", [palace], [])).toEqual([]);
+  });
+});
+
+describe("keepExistingLanes", () => {
+  const lanes = computeLanes("place", [palace, forest], []);
+
+  it("지금 있는 열만 남긴다", () => {
+    const kept = keepExistingLanes(new Set(["place-1", "place-99"]), lanes);
+    expect([...kept]).toEqual(["place-1"]);
+  });
+
+  it("전부 사라졌으면 빈 목록이 된다", () => {
+    // 감춘 것이 없는데 "모두 보기"가 떠 있으면 안 된다.
+    expect(keepExistingLanes(new Set(["place-99"]), lanes).size).toBe(0);
+  });
+
+  it("축이 바뀌어 id 앞머리가 다르면 남기지 않는다", () => {
+    expect(keepExistingLanes(new Set(["character-1"]), lanes).size).toBe(0);
+  });
+
+  it("원래 목록을 건드리지 않는다", () => {
+    const hidden = new Set(["place-1", "place-99"]);
+    keepExistingLanes(hidden, lanes);
+    expect(hidden.size).toBe(2);
   });
 });

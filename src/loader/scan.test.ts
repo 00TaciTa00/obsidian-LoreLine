@@ -108,6 +108,15 @@ describe("scanVault - 분류", () => {
     expect(vault.readCounts.has("다른곳/함락.md")).toBe(false);
   });
 
+  it("앞뒤 슬래시를 붙여 적어도 같게 본다", async () => {
+    vault.set("세계/함락.md", EVENT);
+
+    for (const folder of ["/세계", "세계/", "/세계/"]) {
+      const result = await scanVault(vault.asApp(), folder, createScanCache());
+      expect(result.events, folder).toHaveLength(1);
+    }
+  });
+
   it("폴더를 비우면 볼트 전체를 본다", async () => {
     vault.set("a.md", EVENT).set("깊은/곳/b.md", EVENT);
     expect((await scanVault(vault.asApp(), "", cache)).events).toHaveLength(2);

@@ -3,7 +3,7 @@ import { Keymap, type App, type UserEvent } from "obsidian";
 import type { EventItem } from "../lib/types";
 
 /** 사건 카드에 쓸 색. 사건에 직접 적은 색이 기간 색보다 우선한다. */
-export function eventColor(event: EventItem): string | null {
+function eventColor(event: EventItem): string | null {
   return event.color ?? event.era?.color ?? null;
 }
 
@@ -20,22 +20,13 @@ function shortDescription(description: string | null): string | null {
  *
  * 읽기 전용이라 카드가 하는 일은 노트 열기 하나뿐이다.
  */
-export function renderEventCard(
-  parent: HTMLElement,
-  app: App,
-  event: EventItem,
-  options: { showTime?: boolean } = {},
-): HTMLElement {
+export function renderEventCard(parent: HTMLElement, app: App, event: EventItem): HTMLElement {
   const card = parent.createDiv({ cls: "loreline-event" });
 
   const color = eventColor(event);
   if (color) card.style.setProperty("--loreline-event-color", color);
 
   card.createDiv({ cls: "loreline-event-title", text: event.title });
-
-  if (options.showTime) {
-    card.createDiv({ cls: "loreline-event-time", text: event.displayTime });
-  }
 
   const description = shortDescription(event.description);
   if (description) {
@@ -48,14 +39,18 @@ export function renderEventCard(
   card.setAttribute("tabindex", "0");
   card.setAttribute("aria-label", `${event.title} — ${event.displayTime}`);
 
+  // Ctrl/Cmd를 누른 클릭이면 새 탭. 옵시디언의 링크와 같게 둔다.
   const open = (source: UserEvent) => {
-    // Ctrl/Cmd 클릭이나 가운데 클릭은 새 탭. 옵시디언의 링크와 같게 둔다.
     void app.workspace.openLinkText(event.path, "", Keymap.isModEvent(source));
   };
 
   card.addEventListener("click", open);
   card.addEventListener("auxclick", (source) => {
-    if (source.button === 1) open(source);
+    // 가운데 클릭은 보조 키와 상관없이 언제나 새 탭이다. isModEvent에 맡기면
+    // Ctrl을 같이 누르지 않은 가운데 클릭이 같은 탭에서 열려 버린다.
+    if (source.button !== 1) return;
+    source.preventDefault();
+    void app.workspace.openLinkText(event.path, "", "tab");
   });
   card.addEventListener("keydown", (source) => {
     if (source.key !== "Enter" && source.key !== " ") return;

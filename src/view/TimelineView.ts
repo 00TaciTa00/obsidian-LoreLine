@@ -1,5 +1,6 @@
 import { ItemView, type WorkspaceLeaf } from "obsidian";
 
+import { computeLanes, keepExistingLanes } from "../lib/lanes";
 import { loadLoreData } from "../loader/load";
 import type { LoreData } from "../lib/types";
 import { renderGrid } from "./renderGrid";
@@ -92,6 +93,7 @@ export class TimelineView extends ItemView {
         cache: this.plugin.scanCache,
       });
       this.error = null;
+      this.pruneHidden();
     } catch (error) {
       this.error = error instanceof Error ? error.message : String(error);
       console.error("LoreLine: 볼트를 읽지 못했다", error);
@@ -99,11 +101,21 @@ export class TimelineView extends ItemView {
     this.renderBody();
   }
 
+  /** 지워지거나 이름이 바뀐 열의 id를 감춘 목록에서 뺀다. */
+  private pruneHidden(): void {
+    if (!this.data) return;
+    for (const axis of ["place", "character"] as const) {
+      const lanes = computeLanes(axis, this.data.places, this.data.characters);
+      this.hidden[axis] = keepExistingLanes(this.hidden[axis], lanes);
+    }
+  }
+
   setMode(mode: ViewMode): void {
     if (this.mode === mode) return;
     this.mode = mode;
     this.renderToolbar();
-    this.renderBody();
+    // 다른 내용이 오므로 스크롤은 맨 위에서 시작한다.
+    this.renderBody({ keepScroll: false });
   }
 
   private renderToolbar(): void {
@@ -128,7 +140,14 @@ export class TimelineView extends ItemView {
     refresh.addEventListener("click", () => void this.reload({ notify: true }));
   }
 
-  private renderBody(): void {
+  /**
+   * 본문을 다시 그린다.
+   *
+   * 칩을 누르거나 노트가 바뀌어 다시 그릴 때 맨 위로 튀면 곤란하다. 아래쪽을
+   * 훑던 중이었다면 그 자리에 그대로 있어야 한다.
+   */
+  private renderBody(options: { keepScroll?: boolean } = {}): void {
+    const scrollTop = options.keepScroll === false ? 0 : this.bodyEl.scrollTop;
     this.bodyEl.empty();
 
     if (this.error !== null) {
@@ -137,8 +156,10 @@ export class TimelineView extends ItemView {
     }
     if (!this.data) return;
 
+
     if (this.mode === "all") {
       renderTime(this.bodyEl, this.app, this.data);
+      this.bodyEl.scrollTop = scrollTop;
       return;
     }
 
@@ -156,6 +177,7 @@ export class TimelineView extends ItemView {
         this.renderBody();
       },
     });
+    this.bodyEl.scrollTop = scrollTop;
   }
 
   private renderError(message: string): void {

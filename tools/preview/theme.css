@@ -49,6 +49,8 @@ body {
 }
 
 .preview-pane .loreline-view {
+  /* 미리보기는 뷰를 세로로 쌓아 보여주므로 높이를 내용에 맡긴다. */
+  height: auto;
   border: 1px solid var(--background-modifier-border);
   border-radius: 10px;
   overflow: hidden;
