@@ -106,9 +106,17 @@ export function renderGrid(
   for (const row of rows) {
     const tr = body.createEl("tr");
 
+    // 기간과 시각을 두 줄로 나눈다. 한 줄에 붙여 놓으면 열이 넓어지고, 기간이
+    // 같은 행이 이어질 때 눈이 시각만 따라가기 어렵다.
     const timeCell = tr.createEl("th", { cls: "loreline-grid-time" });
     if (row.eraColor) timeCell.style.setProperty("--loreline-era-color", row.eraColor);
-    timeCell.createSpan({ text: row.displayTime });
+
+    if (row.eraName) {
+      timeCell.createSpan({ cls: "loreline-grid-era", text: row.eraName });
+      timeCell.createSpan({ cls: "loreline-grid-hour", text: row.time });
+    } else {
+      timeCell.createSpan({ cls: "loreline-grid-hour is-alone", text: row.time });
+    }
 
     for (const lane of shown) {
       const td = tr.createEl("td", { cls: "loreline-grid-cell" });

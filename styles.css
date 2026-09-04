@@ -403,3 +403,27 @@
   font-size: var(--font-ui-smaller);
   overflow-wrap: anywhere;
 }
+
+/* 격자의 시간 칸: 기간과 시각을 두 줄로 */
+
+.loreline-grid-era,
+.loreline-grid-hour {
+  display: block;
+}
+
+.loreline-grid-era {
+  color: var(--loreline-era-color, var(--text-muted));
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+}
+
+/* 앞의 ":"는 글자가 아니라 구분 기호다. 복사·읽기에 섞이지 않게 CSS로 붙인다. */
+.loreline-grid-hour::before {
+  content: ": ";
+  color: var(--text-faint);
+}
+
+/* 기간이 없는 행은 시각 한 줄뿐이라 구분 기호도 필요 없다. */
+.loreline-grid-hour.is-alone::before {
+  content: none;
+}

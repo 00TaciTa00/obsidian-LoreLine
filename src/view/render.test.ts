@@ -301,3 +301,61 @@ describe("renderGrid", () => {
     expect(fake.query("loreline-empty")?.text).toContain("켜 둔 인물");
   });
 });
+
+describe("renderGrid - 시간 칸", () => {
+  const palace = place("왕도");
+  const third = era("제3 성력", "#a855f7");
+
+  it("기간과 시각을 두 줄로 나눈다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        places: [palace],
+        events: [ev({ title: "함락", displayTime: "789년", era: third, places: [palace] })],
+      }),
+      "place",
+      GRID_OPTIONS,
+    );
+
+    expect(fake.query("loreline-grid-era")?.text).toBe("제3 성력");
+    expect(fake.query("loreline-grid-hour")?.text).toBe("789년");
+    // ":"는 구분 기호라 CSS가 붙인다. 글자로 섞이지 않는다.
+    expect(fake.query("loreline-grid-hour")?.text).not.toContain(":");
+  });
+
+  it("기간이 없으면 시각 한 줄뿐이다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        places: [palace],
+        events: [ev({ title: "함락", displayTime: "789년", places: [palace] })],
+      }),
+      "place",
+      GRID_OPTIONS,
+    );
+
+    expect(fake.query("loreline-grid-era")).toBeUndefined();
+    // 앞에 붙일 것이 없다는 표시.
+    expect(fake.query("loreline-grid-hour")?.hasClass("is-alone")).toBe(true);
+  });
+
+  it("기간 색은 칸에 그대로 실린다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        places: [palace],
+        events: [ev({ title: "함락", era: third, places: [palace] })],
+      }),
+      "place",
+      GRID_OPTIONS,
+    );
+
+    expect(fake.query("loreline-grid-time")?.cssVar("--loreline-era-color")).toBe("#a855f7");
+  });
+});

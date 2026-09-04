@@ -16,6 +16,16 @@ import type { Lane } from "./lanes";
 export type GridRow = {
   /** 이 행에 보여줄 작중 시각 (상위 기간이 있으면 합쳐진 형태) */
   displayTime: string;
+  /**
+   * 상위 기간 이름. 없으면 null.
+   *
+   * 격자의 시간 칸은 기간과 시각을 두 줄로 나눠 보여주므로 합쳐진 형태만으로는
+   * 부족하다. eraColor와 같은 이유로 여기 담아 둔다 — 보는 쪽이 행 안의 사건을
+   * 뒤져 알아내지 않아도 되게.
+   */
+  eraName: string | null;
+  /** 상위 기간을 뺀 하위 시각 그대로 */
+  time: string;
   /** 같은 행으로 묶을지 판단하는 값 (상위+하위) */
   key: string;
   /**
@@ -66,8 +76,12 @@ export function buildGrid(
     const key = displayTimeKey(event);
     let row = rows.at(-1);
     if (!row || row.key !== key) {
+      const eraName = event.era?.name.trim();
       row = {
         displayTime: formatDisplayTime(event),
+        // formatDisplayTime과 같은 기준으로 본다. 공백뿐인 이름은 없는 것이다.
+        eraName: eraName ? eraName : null,
+        time: event.displayTime,
         key,
         eraColor: event.era?.color ?? null,
         cells: new Map(),

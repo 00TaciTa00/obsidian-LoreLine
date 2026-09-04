@@ -252,3 +252,26 @@ describe("laneEventCounts", () => {
     expect(counts.get("place-9")).toBe(0);
   });
 });
+
+describe("buildGrid - 시간 칸 조각", () => {
+  it("기간과 시각을 따로 담는다", () => {
+    // 격자는 둘을 두 줄로 나눠 보여주므로 합쳐진 형태만으로는 부족하다.
+    const rows = buildGrid(
+      [ev(1, "함락", "789년", [palace], [], "제3 성력")],
+      "place",
+      ALL_PLACES,
+    );
+
+    expect(rows[0].eraName).toBe("제3 성력");
+    expect(rows[0].time).toBe("789년");
+    // 합쳐진 형태도 그대로 남는다.
+    expect(rows[0].displayTime).toBe("제3 성력 - 789년");
+  });
+
+  it("기간이 없으면 eraName은 null이다", () => {
+    const rows = buildGrid([ev(1, "함락", "789년", [palace], [])], "place", ALL_PLACES);
+
+    expect(rows[0].eraName).toBeNull();
+    expect(rows[0].time).toBe("789년");
+  });
+});
