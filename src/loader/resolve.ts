@@ -1,3 +1,4 @@
+import { displayTimeKey, formatDisplayTime } from "../lib/display-time";
 import type { Character, Era, EventItem, LoreData, Place } from "../lib/types";
 import { DEFAULT_COLOR, type ConfigEntry, type LoreConfig } from "./config";
 import type { RawEvent } from "./parse";
@@ -60,10 +61,77 @@ function collectNames(
   return [...names];
 }
 
-/** 정의 파일에는 있는데 개별 노트가 없는 이름 (오타·삭제 탐지용) */
-function findOrphans(entries: ConfigEntry[], fromNotes: string[]): string[] {
+/**
+ * 정의 파일에는 있는데 개별 노트가 없는 이름 (오타·삭제 탐지용).
+ *
+ * 노트를 아직 하나도 안 만든 종류는 검사하지 않는다. 인물 노트를 쓰지 않기로
+ * 했을 뿐인데 정의 파일 전체가 경고로 쏟아지면 쓸모가 없다.
+ */
+function findOrphans(entries: ConfigEntry[], fromNotes: string[], noun: string): string[] {
+  if (fromNotes.length === 0) return [];
+
   const existing = new Set(fromNotes);
-  return entries.map((entry) => entry.name).filter((name) => !existing.has(name));
+  return entries
+    .map((entry) => entry.name)
+    .filter((name) => !existing.has(name))
+    .map((name) => `정의 파일의 ${noun} "${name}"에 해당하는 노트가 없다.`);
+}
+
+/**
+ * 같은 정렬값을 여러 사건이 나눠 쓰는 경우.
+ *
+ * 채번이 자동이 아니라 손으로 적는 구조라 흔하다. 순서가 경로순으로 밀려
+ * 의도와 다르게 서게 되므로 알려 준다. 정렬값을 아예 안 적은 사건은 스캔
+ * 단계에서 이미 알렸으니 여기서 두 번 세지 않는다.
+ */
+function findDuplicateSortKeys(events: EventItem[]): string[] {
+  const byKey = new Map<number, EventItem[]>();
+  for (const event of events) {
+    if (event.sortKey === Number.MAX_SAFE_INTEGER) continue;
+    const bucket = byKey.get(event.sortKey);
+    if (bucket) bucket.push(event);
+    else byKey.set(event.sortKey, [event]);
+  }
+
+  const warnings: string[] = [];
+  for (const [sortKey, bucket] of byKey) {
+    if (bucket.length < 2) continue;
+    const titles = bucket.map((event) => event.title).join(", ");
+    warnings.push(`정렬값 ${sortKey}을 사건 ${bucket.length}건이 함께 쓴다: ${titles}`);
+  }
+  return warnings;
+}
+
+/**
+ * 같은 작중 시각인데 정렬값 순서상 떨어져 있는 경우.
+ *
+ * 격자(buildGrid)는 **잇달아 오는** 사건만 한 행으로 묶는다. 시간축이 흐르는
+ * 순서라 떨어진 것을 합치면 순서가 깨지기 때문이다. 그래서 정렬값을 잘못
+ * 적으면 같은 시각이 격자에 여러 행으로 갈려 나타난다. 보고 나서야 아는 대신
+ * 미리 알린다.
+ */
+function findSplitRows(events: EventItem[]): string[] {
+  const runs = new Map<string, number>();
+  let previous: string | null = null;
+
+  for (const event of events) {
+    const key = displayTimeKey(event);
+    if (key !== previous) runs.set(key, (runs.get(key) ?? 0) + 1);
+    previous = key;
+  }
+
+  const warnings: string[] = [];
+  for (const event of events) {
+    const key = displayTimeKey(event);
+    const count = runs.get(key) ?? 0;
+    if (count < 2) continue;
+    // 한 시각당 한 번만 알린다.
+    runs.set(key, 0);
+    warnings.push(
+      `"${formatDisplayTime(event)}"이 정렬값 순서상 떨어져 있어 격자에서 ${count}개 행으로 갈린다.`,
+    );
+  }
+  return warnings;
 }
 
 /** 사건 하나를 EventItem으로. 이름 참조를 실제 객체로 바꾼다. */
@@ -111,7 +179,7 @@ export function buildLoreData(scan: ScanResult, config: LoreConfig): LoreData {
   );
   const eraNames = collectNames(
     config.eras,
-    [],
+    scan.eraNames,
     scan.events.map((event) => (event.eraName ? [event.eraName] : [])),
   );
 
@@ -133,9 +201,12 @@ export function buildLoreData(scan: ScanResult, config: LoreConfig): LoreData {
     places,
     characters,
     eras,
-    orphanNames: [
-      ...findOrphans(config.places, scan.placeNames),
-      ...findOrphans(config.characters, scan.characterNames),
+    warnings: [
+      ...findOrphans(config.places, scan.placeNames, "장소"),
+      ...findOrphans(config.characters, scan.characterNames, "인물"),
+      ...findOrphans(config.eras, scan.eraNames, "기간"),
+      ...findDuplicateSortKeys(events),
+      ...findSplitRows(events),
     ],
   };
 }

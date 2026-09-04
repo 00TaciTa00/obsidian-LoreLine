@@ -47,6 +47,10 @@ export class FakeEl {
     if (!this.classes.includes(cls)) this.classes.push(cls);
   }
 
+  setAttribute(name: string, value: string): void {
+    this.attrs.set(name, value);
+  }
+
   empty(): void {
     this.children = [];
   }

@@ -192,3 +192,93 @@
 .loreline-grid-cell .loreline-event:last-child {
   margin-bottom: 0;
 }
+
+/* ---- 열 필터 (공간별·인물별) ---- */
+
+.loreline-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.loreline-chip {
+  --loreline-lane-color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.loreline-chip:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* 끈 열도 자리를 지킨다. 사라지면 다시 켤 수가 없다. */
+.loreline-chip.is-off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.loreline-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--loreline-lane-color);
+  flex: none;
+}
+
+.loreline-chip-count {
+  color: var(--text-faint);
+}
+
+.loreline-chip-all {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+/* ---- 로딩 실패 ---- */
+
+.loreline-error {
+  max-width: 520px;
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--text-error, #e5534b);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+
+.loreline-error-title {
+  font-weight: var(--font-semibold);
+  margin-bottom: 6px;
+}
+
+.loreline-error-detail {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+
+.loreline-error .loreline-empty {
+  padding: 12px 0 0;
+  text-align: left;
+}
+
+/* 키보드로 카드에 닿았을 때 어디에 있는지 보여야 한다. */
+.loreline-event:focus-visible,
+.loreline-chip:focus-visible,
+.loreline-toggle-button:focus-visible {
+  outline: 2px solid var(--interactive-accent, #7c6cf0);
+  outline-offset: 2px;
+}

@@ -63,7 +63,13 @@ function walk(dir: string): string[] {
 }
 
 function scanFolder(): ScanResult {
-  const result: ScanResult = { events: [], characterNames: [], placeNames: [], warnings: [] };
+  const result: ScanResult = {
+    events: [],
+    characterNames: [],
+    placeNames: [],
+    eraNames: [],
+    warnings: [],
+  };
 
   for (const path of walk(`${vault}/${folder}`).filter((p) => p.endsWith(".md"))) {
     const content = readFileSync(path, "utf-8");
@@ -75,6 +81,8 @@ function scanFolder(): ScanResult {
       result.characterNames.push(basename);
     } else if (kind === "place") {
       result.placeNames.push(basename);
+    } else if (kind === "era") {
+      result.eraNames.push(basename);
     } else if (kind === "event") {
       const displayTime = toText(fields.displayTime);
       if (!displayTime) continue;
@@ -99,8 +107,16 @@ const app = {} as App;
 
 function renderPane(data: LoreData, mode: "all" | "place" | "character"): string {
   const body = fakeElement("div") as unknown as HTMLElement;
-  if (mode === "all") renderTime(body, app, data);
-  else renderGrid(body, app, data, mode);
+  if (mode === "all") {
+    renderTime(body, app, data);
+  } else {
+    // 미리보기는 정지 화면이라 필터는 그려만 두고 아무것도 감추지 않는다.
+    renderGrid(body, app, data, mode, {
+      hidden: new Set<string>(),
+      onToggle: () => {},
+      onShowAll: () => {},
+    });
+  }
   return (body as unknown as FakeEl).toHtml(3);
 }
 

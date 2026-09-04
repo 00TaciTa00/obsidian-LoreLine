@@ -53,6 +53,12 @@ export type LoreData = {
   places: Place[];
   characters: Character[];
   eras: Era[];
-  /** 정의 파일에만 있고 개별 문서가 없는 이름들 (Notice 경고용) */
-  orphanNames: string[];
+  /**
+   * 사람이 고쳐야 할 것들. 뷰를 막지는 않는다.
+   *
+   * 오타로 남은 이름, 겹친 정렬값, 순서가 어긋나 갈라진 행처럼 "보이기는
+   * 보이는데 의도와 다른" 상태를 모은다. 읽기 전용이라 고치는 것은 노트를
+   * 손보는 쪽이고, 여기서는 알리기만 한다.
+   */
+  warnings: string[];
 };

@@ -1,4 +1,4 @@
-import type { App } from "obsidian";
+import { Keymap, type App, type UserEvent } from "obsidian";
 
 import type { EventItem } from "../lib/types";
 
@@ -42,8 +42,26 @@ export function renderEventCard(
     card.createDiv({ cls: "loreline-event-desc", text: description });
   }
 
-  card.addEventListener("click", () => {
-    void app.workspace.openLinkText(event.path, "", false);
+  // 카드는 노트로 가는 링크다. 마우스만 쓰는 사람도, 키보드만 쓰는 사람도
+  // 같은 곳에 닿아야 한다.
+  card.setAttribute("role", "link");
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("aria-label", `${event.title} — ${event.displayTime}`);
+
+  const open = (source: UserEvent) => {
+    // Ctrl/Cmd 클릭이나 가운데 클릭은 새 탭. 옵시디언의 링크와 같게 둔다.
+    void app.workspace.openLinkText(event.path, "", Keymap.isModEvent(source));
+  };
+
+  card.addEventListener("click", open);
+  card.addEventListener("auxclick", (source) => {
+    if (source.button === 1) open(source);
+  });
+  card.addEventListener("keydown", (source) => {
+    if (source.key !== "Enter" && source.key !== " ") return;
+    // 스페이스로 페이지가 스크롤되지 않게 한다.
+    source.preventDefault();
+    open(source);
   });
 
   return card;

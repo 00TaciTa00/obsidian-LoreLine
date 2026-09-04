@@ -3,7 +3,7 @@ import { Notice, type App } from "obsidian";
 import type { LoreData } from "../lib/types";
 import { loadConfig } from "./config";
 import { buildLoreData } from "./resolve";
-import { scanVault } from "./scan";
+import { scanVault, type ScanCache } from "./scan";
 
 /** 로더 한 바퀴에 필요한 경로들 */
 export type LoadOptions = {
@@ -13,6 +13,8 @@ export type LoadOptions = {
   configPath: string;
   /** 불일치·파싱 경고를 Notice로 띄울지 */
   notify: boolean;
+  /** 지난번에 읽은 것. 바뀐 노트만 다시 읽으려고 넘긴다. */
+  cache?: ScanCache;
 };
 
 /** 한 번에 너무 많은 Notice가 뜨지 않게 자른다. */
@@ -25,19 +27,12 @@ const MAX_NOTICES = 5;
  * 보여야 하기 때문이다. 대신 Notice 한 줄로 알린다.
  */
 export async function loadLoreData(app: App, options: LoadOptions): Promise<LoreData> {
-  const scan = await scanVault(app, options.folder);
+  const scan = await scanVault(app, options.folder, options.cache);
   const { config, warnings: configWarnings } = await loadConfig(app.vault, options.configPath);
   const data = buildLoreData(scan, config);
 
   if (options.notify) {
-    const messages = [
-      ...configWarnings,
-      ...scan.warnings,
-      // 정의 파일에만 있고 노트가 없는 이름 — 오타나 지운 노트일 수 있다.
-      ...data.orphanNames.map(
-        (name) => `정의 파일의 "${name}"에 해당하는 노트가 없다.`,
-      ),
-    ];
+    const messages = [...configWarnings, ...scan.warnings, ...data.warnings];
 
     for (const message of messages.slice(0, MAX_NOTICES)) {
       new Notice(`LoreLine: ${message}`);

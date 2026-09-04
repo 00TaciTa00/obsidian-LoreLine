@@ -4,6 +4,7 @@ import { loadLoreData } from "../loader/load";
 import type { LoreData } from "../lib/types";
 import { renderGrid } from "./renderGrid";
 import { renderTime } from "./renderTime";
+import { renderEmpty } from "./shared";
 
 import type LoreLinePlugin from "../main";
 
@@ -28,6 +29,17 @@ export class TimelineView extends ItemView {
   private plugin: LoreLinePlugin;
   private mode: ViewMode = "all";
   private data: LoreData | null = null;
+  /** 로딩이 실패했을 때의 사유. 성공하면 다시 null이 된다. */
+  private error: string | null = null;
+
+  /**
+   * 축마다 따로 기억하는 감춘 열. 공간별에서 끈 것이 인물별에 영향을 주면
+   * 안 되고, 모드를 오갔다고 필터가 풀려도 곤란하다.
+   */
+  private hidden: Record<"place" | "character", Set<string>> = {
+    place: new Set(),
+    character: new Set(),
+  };
 
   private toolbarEl!: HTMLElement;
   private bodyEl!: HTMLElement;
@@ -65,13 +77,25 @@ export class TimelineView extends ItemView {
     this.contentEl.empty();
   }
 
-  /** 볼트를 다시 훑어 데이터를 새로 만든다. 변경 감지도 이 길로 들어온다. */
+  /**
+   * 볼트를 다시 훑어 데이터를 새로 만든다. 변경 감지도 이 길로 들어온다.
+   *
+   * 실패해도 뷰는 서 있어야 한다. 아무것도 없는 화면은 "사건이 없다"와
+   * 구별되지 않아서, 사유를 그려 두고 다시 읽을 기회를 남긴다.
+   */
   async reload(options: { notify?: boolean } = {}): Promise<void> {
-    this.data = await loadLoreData(this.app, {
-      folder: this.plugin.settings.targetFolder,
-      configPath: this.plugin.settings.configPath,
-      notify: options.notify ?? true,
-    });
+    try {
+      this.data = await loadLoreData(this.app, {
+        folder: this.plugin.settings.targetFolder,
+        configPath: this.plugin.settings.configPath,
+        notify: options.notify ?? true,
+        cache: this.plugin.scanCache,
+      });
+      this.error = null;
+    } catch (error) {
+      this.error = error instanceof Error ? error.message : String(error);
+      console.error("LoreLine: 볼트를 읽지 못했다", error);
+    }
     this.renderBody();
   }
 
@@ -92,6 +116,7 @@ export class TimelineView extends ItemView {
         text: MODE_LABELS[mode],
       });
       if (mode === this.mode) button.addClass("is-active");
+      button.setAttribute("aria-pressed", String(mode === this.mode));
       button.addEventListener("click", () => this.setMode(mode));
     }
 
@@ -105,12 +130,42 @@ export class TimelineView extends ItemView {
 
   private renderBody(): void {
     this.bodyEl.empty();
+
+    if (this.error !== null) {
+      this.renderError(this.error);
+      return;
+    }
     if (!this.data) return;
 
     if (this.mode === "all") {
       renderTime(this.bodyEl, this.app, this.data);
       return;
     }
-    renderGrid(this.bodyEl, this.app, this.data, this.mode);
+
+    const axis = this.mode;
+    renderGrid(this.bodyEl, this.app, this.data, axis, {
+      hidden: this.hidden[axis],
+      onToggle: (laneId) => {
+        const hidden = this.hidden[axis];
+        if (hidden.has(laneId)) hidden.delete(laneId);
+        else hidden.add(laneId);
+        this.renderBody();
+      },
+      onShowAll: () => {
+        this.hidden[axis].clear();
+        this.renderBody();
+      },
+    });
+  }
+
+  private renderError(message: string): void {
+    const box = this.bodyEl.createDiv({ cls: "loreline-error" });
+    box.createDiv({ cls: "loreline-error-title", text: "볼트를 읽지 못했다." });
+    box.createDiv({ cls: "loreline-error-detail", text: message });
+
+    const retry = box.createEl("button", { text: "다시 읽기" });
+    retry.addEventListener("click", () => void this.reload({ notify: true }));
+
+    renderEmpty(box, "설정에서 대상 폴더와 정의 파일 경로를 확인해 보라.");
   }
 }

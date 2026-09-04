@@ -1,5 +1,6 @@
-import { Plugin, type WorkspaceLeaf } from "obsidian";
+import { Notice, Plugin, type WorkspaceLeaf } from "obsidian";
 
+import { createScanCache, type ScanCache } from "./loader/scan";
 import { DEFAULT_SETTINGS, LoreLineSettingTab, type LoreLineSettings } from "./settings";
 import { TimelineView, VIEW_TYPE_LORELINE } from "./view/TimelineView";
 
@@ -8,6 +9,12 @@ const RELOAD_DEBOUNCE_MS = 500;
 
 export default class LoreLinePlugin extends Plugin {
   settings: LoreLineSettings = DEFAULT_SETTINGS;
+
+  /**
+   * 노트별로 지난번에 읽은 것. 뷰가 아니라 플러그인이 들고 있어야 뷰를 닫았다
+   * 열어도 남고, 여러 뷰가 같은 것을 공유한다.
+   */
+  readonly scanCache: ScanCache = createScanCache();
 
   private reloadTimer: number | null = null;
 
@@ -50,7 +57,9 @@ export default class LoreLinePlugin extends Plugin {
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
-    // 대상 폴더나 정의 파일 경로가 바뀌면 지금 보이는 것이 옛것이 된다.
+    // 대상 폴더가 바뀌면 캐시에 남은 것은 다른 폴더의 것이다.
+    this.scanCache.clear();
+    // 경로가 바뀌면 지금 보이는 것이 옛것이 된다.
     await this.reloadViews({ notify: false });
   }
 
@@ -69,13 +78,23 @@ export default class LoreLinePlugin extends Plugin {
     await workspace.revealLeaf(leaf);
   }
 
-  /** 열려 있는 타임라인 뷰를 모두 다시 그린다. */
+  /**
+   * 열려 있는 타임라인 뷰를 모두 다시 그린다.
+   *
+   * 뷰 하나가 넘어져도 나머지는 갱신되어야 한다. 뷰 안에서 이미 한 번 잡지만,
+   * 그 바깥에서 터지는 것까지 여기서 막는다.
+   */
   async reloadViews(options: { notify: boolean }): Promise<void> {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LORELINE);
     for (const leaf of leaves) {
       const view = leaf.view;
-      if (view instanceof TimelineView) {
+      if (!(view instanceof TimelineView)) continue;
+
+      try {
         await view.reload({ notify: options.notify });
+      } catch (error) {
+        console.error("LoreLine: 뷰를 다시 그리지 못했다", error);
+        if (options.notify) new Notice("LoreLine: 타임라인을 다시 읽지 못했다.");
       }
     }
   }
