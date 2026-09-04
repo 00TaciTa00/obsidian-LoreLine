@@ -152,8 +152,9 @@ export default class LoreLinePlugin extends Plugin {
   promptCreateWorld(folder: string): void {
     new CreateWorldModal(this.app, folder, async (request) => {
       try {
-        const world = await createWorld(this.app, request);
-        new Notice(`LoreLine: 세계 "${world.name}"을 만들었다.`);
+        const { world, createdNotes } = await createWorld(this.app, request);
+        const madeSamples = createdNotes.length > 0 ? " 예제 노트도 넣어 두었다." : "";
+        new Notice(`LoreLine: 세계 "${world.name}"을 만들었다.${madeSamples}`);
         await this.revealWorld(world);
         return null;
       } catch (error) {
