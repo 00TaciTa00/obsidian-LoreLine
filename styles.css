@@ -409,12 +409,18 @@
 .loreline-grid-era,
 .loreline-grid-hour {
   display: block;
+  line-height: 1.35;
 }
 
+/* 기간이 그 구간의 머리다. 시각보다 크게 둬서 어느 시대인지가 먼저 읽히게 한다. */
 .loreline-grid-era {
   color: var(--loreline-era-color, var(--text-muted));
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-semibold);
+}
+
+.loreline-grid-hour {
   font-size: var(--font-ui-smaller);
-  font-weight: var(--font-medium);
 }
 
 /* 앞의 ":"는 글자가 아니라 구분 기호다. 복사·읽기에 섞이지 않게 CSS로 붙인다. */
