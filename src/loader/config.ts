@@ -1,4 +1,4 @@
-import type { Vault } from "obsidian";
+import { TFile, type Vault } from "obsidian";
 
 /**
  * `loreline.config.json` 로드·검증.
@@ -102,8 +102,10 @@ export function parseConfig(text: string): ConfigLoadResult {
  * (색·순서를 아직 안 정했을 뿐, 사건은 보여야 한다).
  */
 export async function loadConfig(vault: Vault, path: string): Promise<ConfigLoadResult> {
-  const file = vault.getFileByPath(path);
-  if (!file) return { config: EMPTY_CONFIG, warnings: [] };
+  // getFileByPath는 비교적 최근에 생겼다. 오래된 쪽을 써서 minAppVersion을
+  // 낮게 유지한다.
+  const file = vault.getAbstractFileByPath(path);
+  if (!(file instanceof TFile)) return { config: EMPTY_CONFIG, warnings: [] };
 
   try {
     return parseConfig(await vault.cachedRead(file));

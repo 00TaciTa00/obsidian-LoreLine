@@ -32,6 +32,8 @@ export class TimelineView extends ItemView {
   private data: LoreData | null = null;
   /** 로딩이 실패했을 때의 사유. 성공하면 다시 null이 된다. */
   private error: string | null = null;
+  /** 경고 목록을 펼쳐 두었는지 */
+  private warningsOpen = false;
 
   /**
    * 축마다 따로 기억하는 감춘 열. 공간별에서 끈 것이 인물별에 영향을 주면
@@ -98,6 +100,8 @@ export class TimelineView extends ItemView {
       this.error = error instanceof Error ? error.message : String(error);
       console.error("LoreLine: 볼트를 읽지 못했다", error);
     }
+    // 경고 개수가 달라졌을 수 있다.
+    this.renderToolbar();
     this.renderBody();
   }
 
@@ -132,12 +136,48 @@ export class TimelineView extends ItemView {
       button.addEventListener("click", () => this.setMode(mode));
     }
 
+    this.renderWarningToggle();
+
     const refresh = this.toolbarEl.createEl("button", {
       cls: "loreline-refresh",
       text: "다시 읽기",
     });
-    // 손으로 눌렀을 때는 경고를 다시 보여 준다.
-    refresh.addEventListener("click", () => void this.reload({ notify: true }));
+    refresh.addEventListener("click", () => void this.reload({ notify: false }));
+  }
+
+  /**
+   * 경고가 있으면 상단에 개수를 띄운다.
+   *
+   * Notice는 스쳐 지나가고 자동 다시 읽기 때는 아예 뜨지 않는다. 오타 하나로
+   * 사건이 엉뚱한 자리에 서 있는 것을 계속 모르고 지나칠 수 있어서, 개수만은
+   * 뷰에 남겨 둔다.
+   */
+  private renderWarningToggle(): void {
+    const count = this.data?.warnings.length ?? 0;
+    if (count === 0) return;
+
+    const button = this.toolbarEl.createEl("button", {
+      cls: "loreline-warn-toggle",
+      text: `경고 ${count}`,
+    });
+    button.setAttribute("aria-expanded", String(this.warningsOpen));
+    button.addEventListener("click", () => {
+      this.warningsOpen = !this.warningsOpen;
+      this.renderToolbar();
+      this.renderBody();
+    });
+  }
+
+  /** 펼친 경고 목록. 본문 맨 위에 붙는다. */
+  private renderWarnings(): void {
+    const warnings = this.data?.warnings ?? [];
+    if (!this.warningsOpen || warnings.length === 0) return;
+
+    const panel = this.bodyEl.createDiv({ cls: "loreline-warnings" });
+    const list = panel.createEl("ul");
+    for (const warning of warnings) {
+      list.createEl("li", { text: warning });
+    }
   }
 
   /**
@@ -155,6 +195,8 @@ export class TimelineView extends ItemView {
       return;
     }
     if (!this.data) return;
+
+    this.renderWarnings();
 
 
     if (this.mode === "all") {

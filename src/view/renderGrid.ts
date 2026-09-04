@@ -23,6 +23,8 @@ function renderFilter(
   options: GridOptions,
 ): void {
   const bar = parent.createDiv({ cls: "loreline-filter" });
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", "열 필터");
 
   for (const lane of lanes) {
     const chip = bar.createEl("button", { cls: "loreline-chip" });

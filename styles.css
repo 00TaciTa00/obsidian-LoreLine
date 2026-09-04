@@ -86,7 +86,6 @@
   font-weight: var(--font-medium);
 }
 
-.loreline-event-time,
 .loreline-event-desc {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
@@ -296,4 +295,41 @@
 .loreline-toggle-button:focus-visible {
   outline: 2px solid var(--interactive-accent, #7c6cf0);
   outline-offset: 2px;
+}
+
+/* ---- 경고 ---- */
+
+.loreline-warn-toggle {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-warning, #d9a441);
+  cursor: pointer;
+}
+
+/* 경고 단추가 있으면 그쪽이 여백을 밀어내므로 다시 읽기는 원래 자리로 둔다. */
+.loreline-warn-toggle ~ .loreline-refresh {
+  margin-left: 0;
+}
+
+.loreline-warnings {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--text-warning, #d9a441);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+
+.loreline-warnings ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.loreline-warnings li {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin: 2px 0;
+  overflow-wrap: anywhere;
 }

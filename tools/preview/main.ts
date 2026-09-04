@@ -25,7 +25,7 @@ import { buildLoreData } from "../../src/loader/resolve";
 import type { ScanResult } from "../../src/loader/scan";
 import { renderGrid } from "../../src/view/renderGrid";
 import { renderTime } from "../../src/view/renderTime";
-import { FakeEl, fakeElement } from "./dom";
+import { FakeEl, fakeElement } from "../../src/testing/fake-dom";
 
 const vault = process.argv[2] ?? "C:/Obsidian/Hobby";
 const folder = process.argv[3] ?? "핀타디네";

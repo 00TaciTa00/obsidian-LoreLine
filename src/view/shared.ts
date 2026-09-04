@@ -7,12 +7,25 @@ function eventColor(event: EventItem): string | null {
   return event.color ?? event.era?.color ?? null;
 }
 
-/** 카드에 접어 넣을 설명. 길면 잘라서 한 덩어리 크기를 맞춘다. */
+/** 카드에 접어 넣을 설명의 최대 길이 (글자 수) */
+const DESCRIPTION_LIMIT = 120;
+
+/**
+ * 카드에 접어 넣을 설명. 길면 잘라서 한 덩어리 크기를 맞춘다.
+ *
+ * slice가 아니라 코드포인트 단위로 센다. 이모지처럼 두 칸을 차지하는 글자를
+ * slice로 자르면 반쪽이 남아 깨진 글자가 보인다.
+ */
 function shortDescription(description: string | null): string | null {
   if (!description) return null;
+
   const oneLine = description.replace(/\s+/g, " ").trim();
   if (!oneLine) return null;
-  return oneLine.length > 120 ? `${oneLine.slice(0, 120)}…` : oneLine;
+
+  const letters = [...oneLine];
+  return letters.length > DESCRIPTION_LIMIT
+    ? `${letters.slice(0, DESCRIPTION_LIMIT).join("")}…`
+    : oneLine;
 }
 
 /**

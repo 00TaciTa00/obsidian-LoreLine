@@ -16,6 +16,6 @@
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src/**/*.ts", "*.mts"],
+  "include": ["src/**/*.ts", "tools/**/*.ts", "*.mts"],
   "exclude": ["node_modules"]
 }
