@@ -333,3 +333,49 @@
   margin: 2px 0;
   overflow-wrap: anywhere;
 }
+
+/* ---- 세계 ---- */
+
+.loreline-world-switch {
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+  box-shadow: none;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loreline-world-switch:hover {
+  color: var(--text-normal);
+}
+
+/* 설정 탭의 세계 목록 */
+
+.loreline-world-items {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.loreline-world-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.loreline-world-name {
+  font-weight: var(--font-medium);
+}
+
+.loreline-world-path,
+.loreline-world-empty {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}

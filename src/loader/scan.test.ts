@@ -1,7 +1,7 @@
 import type { App, TFile } from "obsidian";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createScanCache, scanVault, type ScanCache } from "./scan";
+import { createScanCache, ScanCaches, scanVault, touchesFolder, type ScanCache } from "./scan";
 
 /**
  * 옵시디언 대신 쓰는 최소 볼트.
@@ -244,5 +244,73 @@ describe("scanVault - 캐시", () => {
     await scanVault(app, "세계");
 
     expect(vault.readCounts.get("세계/a.md")).toBe(2);
+  });
+});
+
+describe("touchesFolder", () => {
+  it("그 폴더 안의 변경만 센다", () => {
+    const paths = new Set(["핀타디네/사건/탄생.md"]);
+
+    expect(touchesFolder(paths, "핀타디네")).toBe(true);
+    expect(touchesFolder(paths, "상실의 유산")).toBe(false);
+  });
+
+  it("이름이 앞부분만 같은 폴더는 남이다", () => {
+    // "핀타디네"와 "핀타디네 설정"은 다른 폴더다.
+    expect(touchesFolder(new Set(["핀타디네 설정/메모.md"]), "핀타디네")).toBe(false);
+  });
+
+  it("폴더와 같은 이름의 파일은 그 폴더 안이 아니다", () => {
+    expect(touchesFolder(new Set(["핀타디네.md"]), "핀타디네")).toBe(false);
+  });
+
+  it("최상위 세계는 볼트 어디가 바뀌어도 걸린다", () => {
+    expect(touchesFolder(new Set(["아무데나/a.md"]), "")).toBe(true);
+  });
+
+  it("바뀐 것이 없으면 아무 세계도 걸리지 않는다", () => {
+    expect(touchesFolder(new Set(), "핀타디네")).toBe(false);
+    expect(touchesFolder(new Set(), "")).toBe(false);
+  });
+});
+
+describe("ScanCaches", () => {
+  it("폴더마다 다른 캐시를 준다", () => {
+    // 하나를 나눠 쓰면 스캔 끝의 정리가 서로를 지운다.
+    const caches = new ScanCaches();
+    expect(caches.for("가")).not.toBe(caches.for("나"));
+  });
+
+  it("같은 폴더에는 같은 것을 준다", () => {
+    const caches = new ScanCaches();
+    expect(caches.for("가")).toBe(caches.for("가"));
+  });
+
+  it("세계 하나를 읽어도 다른 세계의 캐시는 그대로다", async () => {
+    const vault = new FakeVault();
+    vault.set("가/a.md", EVENT, "가나다").set("나/b.md", EVENT, "라마바");
+    const app = vault.asApp();
+    const caches = new ScanCaches();
+
+    await scanVault(app, "가", caches.for("가"));
+    await scanVault(app, "나", caches.for("나"));
+    // 여기서 "가"를 다시 읽어도 본문을 새로 읽을 이유가 없다.
+    await scanVault(app, "가", caches.for("가"));
+
+    expect(vault.readCounts.get("가/a.md")).toBe(1);
+    expect(vault.readCounts.get("나/b.md")).toBe(1);
+  });
+
+  it("잊으면 다음에 다시 읽는다", async () => {
+    const vault = new FakeVault();
+    vault.set("가/a.md", EVENT);
+    const app = vault.asApp();
+    const caches = new ScanCaches();
+
+    await scanVault(app, "가", caches.for("가"));
+    caches.forget("가");
+    await scanVault(app, "가", caches.for("가"));
+
+    expect(vault.readCounts.get("가/a.md")).toBe(2);
   });
 });

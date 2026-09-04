@@ -1,21 +1,34 @@
 import { PluginSettingTab, Setting, type App } from "obsidian";
 
+import { CONFIG_FILE_NAME } from "./loader/config";
+import { findWorlds } from "./loader/worlds";
+
 import type LoreLinePlugin from "./main";
 
 export type LoreLineSettings = {
-  /** 스캔 대상 폴더. 빈 문자열이면 볼트 전체 */
-  targetFolder: string;
-  /** 색·순서 정의 파일의 볼트 경로 */
-  configPath: string;
   /** 노트가 바뀌면 뷰를 다시 그릴지 */
   autoReload: boolean;
 };
 
 export const DEFAULT_SETTINGS: LoreLineSettings = {
-  targetFolder: "",
-  configPath: "loreline.config.json",
   autoReload: true,
 };
+
+/**
+ * 저장된 값에서 아는 것만 골라 낸다.
+ *
+ * 예전 판에는 대상 폴더와 정의 파일 경로가 설정에 있었다. 지금은 정의 파일이
+ * 놓인 자리가 곧 세계라 설정에 둘 것이 없다. 남은 키는 흘려보낸다.
+ */
+export function normalizeSettings(raw: unknown): LoreLineSettings {
+  if (typeof raw !== "object" || raw === null) return { ...DEFAULT_SETTINGS };
+
+  const record = raw as Record<string, unknown>;
+  return {
+    autoReload:
+      typeof record.autoReload === "boolean" ? record.autoReload : DEFAULT_SETTINGS.autoReload,
+  };
+}
 
 export class LoreLineSettingTab extends PluginSettingTab {
   private plugin: LoreLinePlugin;
@@ -30,34 +43,6 @@ export class LoreLineSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName("대상 폴더")
-      .setDesc("사건·인물·장소 노트를 찾을 폴더. 비워 두면 볼트 전체를 훑는다.")
-      .addText((text) =>
-        text
-          .setPlaceholder("예: 핀타디네")
-          .setValue(this.plugin.settings.targetFolder)
-          .onChange(async (value) => {
-            // 앞뒤 슬래시를 모두 벗긴다. 볼트 경로는 "/"로 시작하지 않아서,
-            // "/핀타디네"라고 적으면 어떤 파일도 안 걸리고 빈 화면이 된다.
-            this.plugin.settings.targetFolder = value.trim().replace(/^\/+|\/+$/g, "");
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("정의 파일 경로")
-      .setDesc("색과 순서를 담은 JSON. 볼트 최상위에서부터의 경로로 적는다.")
-      .addText((text) =>
-        text
-          .setPlaceholder("loreline.config.json")
-          .setValue(this.plugin.settings.configPath)
-          .onChange(async (value) => {
-            this.plugin.settings.configPath = value.trim();
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
       .setName("자동 다시 읽기")
       .setDesc("노트나 정의 파일이 바뀌면 열려 있는 타임라인을 다시 그린다.")
       .addToggle((toggle) =>
@@ -66,5 +51,35 @@ export class LoreLineSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }),
       );
+
+    new Setting(containerEl).setName("세계").setHeading();
+
+    const list = containerEl.createDiv({ cls: "loreline-world-list" });
+    list.createEl("p", {
+      cls: "setting-item-description",
+      text: `${CONFIG_FILE_NAME}이 놓인 폴더가 하나의 세계가 된다. 새 세계를 만들려면 그 폴더에 이 파일을 두면 된다 (내용이 "{}" 한 줄이어도 된다).`,
+    });
+
+    // 목록은 볼트를 읽어야 알 수 있어 설정 탭을 열 때마다 새로 찾는다.
+    void this.renderWorlds(list);
+  }
+
+  private async renderWorlds(parent: HTMLElement): Promise<void> {
+    const worlds = await findWorlds(this.app);
+
+    if (worlds.length === 0) {
+      parent.createEl("p", {
+        cls: "loreline-world-empty",
+        text: "찾은 세계가 없다.",
+      });
+      return;
+    }
+
+    const list = parent.createEl("ul", { cls: "loreline-world-items" });
+    for (const world of worlds) {
+      const item = list.createEl("li");
+      item.createSpan({ cls: "loreline-world-name", text: world.name });
+      item.createSpan({ cls: "loreline-world-path", text: world.folder || "(볼트 최상위)" });
+    }
   }
 }

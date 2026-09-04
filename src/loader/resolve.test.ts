@@ -31,6 +31,7 @@ function scan(partial: Partial<ScanResult> = {}): ScanResult {
 }
 
 const CONFIG: LoreConfig = {
+  name: null,
   characters: [
     { name: "아나이스", color: "#3b82f6", order: 10 },
     { name: "지벨린", color: "#ef4444", order: 20 },

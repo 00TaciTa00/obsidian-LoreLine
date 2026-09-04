@@ -15,16 +15,28 @@ export type ConfigEntry = {
 };
 
 export type LoreConfig = {
+  /** 세계의 표시 이름. 없으면 폴더명을 쓴다. */
+  name: string | null;
   characters: ConfigEntry[];
   places: ConfigEntry[];
   eras: ConfigEntry[];
 };
 
 export const EMPTY_CONFIG: LoreConfig = {
+  name: null,
   characters: [],
   places: [],
   eras: [],
 };
+
+/**
+ * 정의 파일의 이름. **이 파일이 있는 폴더가 곧 하나의 세계다.**
+ *
+ * 세계 목록을 설정에 따로 두지 않는 이유는, 그러면 폴더를 만들 때마다 설정을
+ * 열어야 하고 플러그인이 자기 데이터를 갖게 되기 때문이다. 파일이 있는 자리가
+ * 곧 선언이면 볼트를 복사해도 그대로 따라온다.
+ */
+export const CONFIG_FILE_NAME = "loreline.config.json";
 
 /** 정의 파일에 색이 없는 항목이 쓸 기본색 */
 export const DEFAULT_COLOR = "#6b7280";
@@ -89,6 +101,7 @@ export function parseConfig(text: string): ConfigLoadResult {
   const record = raw as Record<string, unknown>;
   return {
     config: {
+      name: typeof record.name === "string" && record.name.trim() ? record.name.trim() : null,
       characters: normalizeSection(record.characters, "characters", warnings),
       places: normalizeSection(record.places, "places", warnings),
       eras: normalizeSection(record.eras, "eras", warnings),

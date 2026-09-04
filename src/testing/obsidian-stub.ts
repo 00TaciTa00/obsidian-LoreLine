@@ -9,6 +9,8 @@
 /** 볼트의 파일. config.ts가 instanceof로 폴더와 가른다. */
 export class TFile {
   path = "";
+  /** 확장자까지 붙은 파일 이름 */
+  name = "";
   basename = "";
   extension = "";
   stat = { mtime: 0, ctime: 0, size: 0 };
@@ -37,3 +39,13 @@ export const Keymap = {
   /** 테스트에서 바꿔 끼울 수 있게 열어 둔다. */
   isModEvent: (_event?: unknown): boolean => false,
 };
+
+/** 세계 고르기 목록. 테스트에서는 열 일이 없어 모양만 갖춘다. */
+export class FuzzySuggestModal<T> {
+  constructor(_app?: unknown) {}
+  setPlaceholder(_text: string): void {}
+  open(): void {}
+  getItems(): T[] {
+    return [];
+  }
+}

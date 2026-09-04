@@ -45,16 +45,63 @@ export function createScanCache(): ScanCache {
   return new Map();
 }
 
+/**
+ * 폴더별 캐시 보관소.
+ *
+ * 캐시 하나를 여러 세계가 나눠 쓰면 서로를 잡아먹는다. 스캔 끝에 "이번에 못 본
+ * 경로"를 지우기 때문에, 세계 A를 읽으면 B의 것이 통째로 날아가고 번갈아 볼
+ * 때마다 적중률이 0이 된다. 그래서 폴더마다 따로 둔다.
+ */
+export class ScanCaches {
+  private caches = new Map<string, ScanCache>();
+
+  /** 그 폴더의 캐시. 없으면 만들어 둔다. */
+  for(folder: string): ScanCache {
+    const found = this.caches.get(folder);
+    if (found) return found;
+
+    const created = createScanCache();
+    this.caches.set(folder, created);
+    return created;
+  }
+
+  /** 그 폴더의 캐시를 버린다. 폴더 이름이 바뀌었을 때처럼 통째로 낡았을 때. */
+  forget(folder: string): void {
+    this.caches.delete(folder);
+  }
+
+  clear(): void {
+    this.caches.clear();
+  }
+
+  get size(): number {
+    return this.caches.size;
+  }
+}
+
 /** 한 번에 열어 둘 파일 수. 볼트가 커도 핸들이 한꺼번에 몰리지 않게 한다. */
 const READ_BATCH = 32;
 
 /**
+ * 바뀐 경로 중 하나라도 그 폴더 안에 있는지.
+ *
+ * 세계 넷을 열어 두고 한 곳의 노트를 고쳤을 뿐인데 넷을 다 훑을 이유가 없다.
+ */
+export function touchesFolder(paths: Iterable<string>, folder: string): boolean {
+  for (const path of paths) {
+    if (isInFolder(path, folder)) return true;
+  }
+  return false;
+}
+
+/**
  * 폴더 경로 아래에 있는 파일인지. 빈 경로는 볼트 전체를 뜻한다.
  *
- * 설정에서 이미 다듬지만 여기서도 앞뒤 슬래시를 벗긴다. 예전에 저장해 둔
- * 설정이 그대로 넘어와도 조용히 빈 화면이 되면 안 된다.
+ * 앞뒤 슬래시를 벗기고 본다. 세계의 폴더는 정의 파일 경로에서 잘라 내므로
+ * 보통 깨끗하지만, 예전에 저장해 둔 값이 그대로 넘어와도 조용히 빈 화면이
+ * 되면 안 된다.
  */
-function isInFolder(path: string, folder: string): boolean {
+export function isInFolder(path: string, folder: string): boolean {
   const trimmed = folder.replace(/^\/+|\/+$/g, "");
   if (!trimmed) return true;
   return path.startsWith(`${trimmed}/`);
