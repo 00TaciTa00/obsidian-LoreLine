@@ -30,7 +30,6 @@ function ev(partial: Partial<EventItem> & { title: string }): EventItem {
     era: null,
     displayTime: "1년",
     sortKey: 1000,
-    color: null,
     places: [],
     characters: [],
     ...partial,
@@ -77,20 +76,31 @@ describe("renderEventCard", () => {
     expect(card.attr("aria-label")).toContain("왕도 함락");
   });
 
-  it("사건 색이 기간 색보다 앞선다", () => {
-    const { el, fake } = root();
-    renderEventCard(
-      el,
-      fakeApp(),
-      ev({ title: "a", color: "#ff0000", era: era("제3 성력", "#00ff00") }),
-    );
-    expect(fake.query("loreline-event")?.cssVar("--loreline-event-color")).toBe("#ff0000");
-  });
-
-  it("사건에 색이 없으면 기간 색을 쓴다", () => {
+  it("왼쪽 띠에 기간 색을 싣는다", () => {
     const { el, fake } = root();
     renderEventCard(el, fakeApp(), ev({ title: "a", era: era("제3 성력", "#00ff00") }));
-    expect(fake.query("loreline-event")?.cssVar("--loreline-event-color")).toBe("#00ff00");
+    expect(fake.query("loreline-event")?.cssVar("--loreline-card-era")).toBe("#00ff00");
+  });
+
+  it("기간이 없으면 왼쪽 띠 색을 주지 않는다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }));
+    expect(fake.query("loreline-event")?.cssVar("--loreline-card-era")).toBeUndefined();
+  });
+
+  it("열 색을 받으면 위쪽 띠를 단다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), { laneColor: "#22c55e" });
+
+    const card = fake.query("loreline-event");
+    expect(card?.hasClass("has-lane")).toBe(true);
+    expect(card?.cssVar("--loreline-card-lane")).toBe("#22c55e");
+  });
+
+  it("열 색이 없으면 위쪽 띠가 없다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }));
+    expect(fake.query("loreline-event")?.hasClass("has-lane")).toBe(false);
   });
 
   it("클릭하면 그 노트를 연다", () => {
@@ -190,6 +200,16 @@ describe("renderTime", () => {
     expect(fake.query("loreline-era-header")?.cssVar("--loreline-era-color")).toBe("#a855f7");
   });
 
+  it("목록 카드에는 위쪽 띠가 없다", () => {
+    // 시간별에는 열 구분이 없다. 위쪽 띠는 격자에서만 뜻이 있다.
+    const { el, fake } = root();
+    renderTime(el, fakeApp(), data({ eras: [third], events: [ev({ title: "a", era: third })] }));
+
+    const card = fake.query("loreline-event");
+    expect(card?.cssVar("--loreline-card-era")).toBe("#a855f7");
+    expect(card?.hasClass("has-lane")).toBe(false);
+  });
+
   it("사건이 없는 기간도 남긴다", () => {
     const { el, fake } = root();
     renderTime(
@@ -233,6 +253,16 @@ describe("renderGrid", () => {
     expect(lanes.map((l) => l.query("loreline-lane-name")?.text)).toEqual(["왕도", "숲"]);
     expect(lanes.map((l) => l.query("loreline-lane-count")?.text)).toEqual(["1", "2"]);
     expect(lanes[0].cssVar("--loreline-lane-color")).toBe("#22c55e");
+  });
+
+  it("카드의 위쪽 띠는 그 카드가 놓인 열의 색이다", () => {
+    const { el, fake } = root();
+    renderGrid(el, fakeApp(), WORLD, "place", GRID_OPTIONS);
+
+    const cards = fake.queryAll("loreline-event");
+    const byTitle = new Map(cards.map((c) => [c.query("loreline-event-title")?.text, c]));
+    expect(byTitle.get("함락")?.cssVar("--loreline-card-lane")).toBe("#22c55e");
+    expect(byTitle.get("추격")?.cssVar("--loreline-card-lane")).toBe("#f97316");
   });
 
   it("같은 작중 시각은 한 행으로 묶는다", () => {

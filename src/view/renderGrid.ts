@@ -126,7 +126,7 @@ export function renderGrid(
     for (const lane of shown) {
       const td = tr.createEl("td", { cls: "loreline-grid-cell" });
       for (const event of row.cells.get(lane.id) ?? []) {
-        renderEventCard(td, app, event);
+        renderEventCard(td, app, event, { laneColor: lane.color });
       }
     }
   }

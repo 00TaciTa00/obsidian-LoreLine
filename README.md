@@ -191,7 +191,6 @@ sortKey: 3000             # sorting only. Ascending
 era: "Third Sacred Age"   # era name. Omit if none
 characters: ["Anais", "Zibelin"]
 places: ["The Capital"]
-color: "#3b82f6"          # optional. Falls back to the era color
 ---
 # The Fall of the Capital
 
@@ -205,6 +204,10 @@ The gates opened.
   anything goes.
 - But **only exactly equal strings merge into one row.** `"Winter of year 3"` and
   `"Winter of year 3 (night)"` are different rows.
+- Events have no color of their own. A card's **left band is its era's color**, and
+  in the place/character grids its **top band is the color of the column** it sits
+  in. Colors live in `loreline.config.json`. A `color:` key left in an event note is
+  ignored.
 
 ### 2. Character / place / era notes — declaring that a name exists
 

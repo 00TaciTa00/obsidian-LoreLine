@@ -29,7 +29,6 @@ function ev(
         : { id: eraName, name: eraName, color: "#000", order: 10, path: null },
     displayTime,
     sortKey: id * 1000,
-    color: null,
     places,
     characters,
   };

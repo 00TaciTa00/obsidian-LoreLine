@@ -24,7 +24,6 @@ function raw(partial: Partial<RawEvent> & { path: string }): RawEvent {
     eraName: null,
     characterNames: [],
     placeNames: [],
-    color: null,
     ...partial,
   };
 }

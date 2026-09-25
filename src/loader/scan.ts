@@ -159,7 +159,6 @@ function toEvent(
       eraName: toText(frontmatter.era),
       characterNames: toNameList(frontmatter.characters),
       placeNames: toNameList(frontmatter.places),
-      color: toText(frontmatter.color),
     },
     warnings,
   };

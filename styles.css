@@ -68,14 +68,22 @@
 
 /* ---- 사건 카드 (세 뷰 공통) ---- */
 
+/*
+ * 색 띠: 왼쪽=기간, 위쪽=격자의 열(공간·인물). 기간이 없으면 띠 자리만 비워
+ * 두어 카드 글자가 들쭉날쭉하지 않게 한다.
+ */
 .loreline-event {
-  --loreline-event-color: var(--background-modifier-border);
-  border-left: 3px solid var(--loreline-event-color);
+  --loreline-card-era: transparent;
+  border-left: 3px solid var(--loreline-card-era);
   border-radius: var(--radius-s);
   background: var(--background-secondary);
   padding: 6px 10px;
   margin-bottom: 6px;
   cursor: pointer;
+}
+
+.loreline-event.has-lane {
+  border-top: 3px solid var(--loreline-card-lane);
 }
 
 .loreline-event:hover {

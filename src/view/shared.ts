@@ -40,11 +40,6 @@ export function asNoteLink(
   });
 }
 
-/** 사건 카드에 쓸 색. 사건에 직접 적은 색이 기간 색보다 우선한다. */
-function eventColor(event: EventItem): string | null {
-  return event.color ?? event.era?.color ?? null;
-}
-
 /** 카드에 접어 넣을 설명의 최대 길이 (글자 수) */
 const DESCRIPTION_LIMIT = 120;
 
@@ -69,13 +64,27 @@ function shortDescription(description: string | null): string | null {
 /**
  * 사건 하나를 카드로 그린다. 세 뷰가 모두 같은 카드를 쓴다.
  *
+ * 카드의 색 띠가 맥락을 말한다(원본 c6a8456). 사건마다 따로 색을 주던 것은
+ * 기간·공간과 뜻이 겹쳐 없앴다.
+ * - 왼쪽 띠: 그 사건의 기간 색. 기간이 없으면 띠 자리만 남는다
+ * - 위쪽 띠: 격자에서만, 그 카드가 놓인 열(공간·인물)의 색. 시간별 목록은 열이
+ *   없으므로 두지 않는다
+ *
  * 읽기 전용이라 카드가 하는 일은 노트 열기 하나뿐이다.
  */
-export function renderEventCard(parent: HTMLElement, app: App, event: EventItem): HTMLElement {
+export function renderEventCard(
+  parent: HTMLElement,
+  app: App,
+  event: EventItem,
+  options: { laneColor?: string } = {},
+): HTMLElement {
   const card = parent.createDiv({ cls: "loreline-event" });
 
-  const color = eventColor(event);
-  if (color) card.style.setProperty("--loreline-event-color", color);
+  if (event.era) card.style.setProperty("--loreline-card-era", event.era.color);
+  if (options.laneColor) {
+    card.addClass("has-lane");
+    card.style.setProperty("--loreline-card-lane", options.laneColor);
+  }
 
   card.createDiv({ cls: "loreline-event-title", text: event.title });
 

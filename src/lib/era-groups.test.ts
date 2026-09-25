@@ -22,7 +22,6 @@ function ev(
     era: eraOf,
     displayTime,
     sortKey: id * 1000,
-    color: null,
     places: [],
     characters: [],
   };

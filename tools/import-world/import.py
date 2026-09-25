@@ -114,8 +114,6 @@ def main():
             if names:
                 lines.append(f"{field}: [{', '.join(names)}]")
 
-        if event.get("color"):
-            lines.append(f"color: {quote(event['color'])}")
         lines.append("---")
 
         # 파일명이 다듬어졌어도 제목은 그대로 보이게 H1을 둔다.

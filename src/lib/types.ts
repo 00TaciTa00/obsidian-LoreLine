@@ -51,7 +51,6 @@ export type EventItem = {
   displayTime: string;
   /** frontmatter의 정렬 전용 숫자. 오름차순 정렬에만 쓴다. */
   sortKey: number;
-  color: string | null;
   places: Place[];
   characters: Character[];
 };

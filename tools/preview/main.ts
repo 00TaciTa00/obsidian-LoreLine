@@ -101,7 +101,6 @@ function scanFolder(): ScanResult {
         eraName: toText(fields.era),
         characterNames: toNameList(fields.characters),
         placeNames: toNameList(fields.places),
-        color: toText(fields.color),
       });
     }
   }

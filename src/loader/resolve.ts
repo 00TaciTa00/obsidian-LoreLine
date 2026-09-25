@@ -153,7 +153,6 @@ function resolveEvent(
     era: raw.eraName ? (eras.get(raw.eraName) ?? null) : null,
     displayTime: raw.displayTime,
     sortKey: raw.sortKey,
-    color: raw.color,
     // 목록에 없는 이름은 위에서 이미 채워 넣었으므로 여기서 빠지는 일은 없다.
     places: raw.placeNames.map((name) => places.get(name)).filter(isPresent),
     characters: raw.characterNames.map((name) => characters.get(name)).filter(isPresent),

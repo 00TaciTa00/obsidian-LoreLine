@@ -15,7 +15,6 @@ export type RawEvent = {
   eraName: string | null;
   characterNames: string[];
   placeNames: string[];
-  color: string | null;
 };
 
 /** frontmatter 값 하나를 문자열 배열로 본다. 단일 문자열도 한 칸짜리로 받는다. */
