@@ -331,7 +331,7 @@ the hit rate to zero whenever you alternate between two worlds.
 ```bash
 npx esbuild tools/preview/main.ts --bundle --platform=node --format=esm \
   --alias:obsidian=./src/testing/obsidian-stub.ts --outfile=tools/preview/out.mjs
-node tools/preview/out.mjs "C:/Obsidian/Hobby" "Pintadine" preview.html
+node tools/preview/out.mjs "<vault path>" "<world folder>" preview.html
 ```
 
 It uses the real renderers and the real `styles.css`, and reads a real vault. You get
@@ -370,8 +370,10 @@ exactly** — prefix it as `v0.1.0` and Obsidian will not find it.
   outright
 
 The computation in `lib/timeline` (`formatDisplayTime`, `computeLanes`, `buildGrid`,
-`buildEraGroups`) was moved **without changing a single line of its bodies**. Only the
-types changed: database columns stripped, `id` turned into the name string.
+`buildEraGroups`) keeps the original algorithms. The types lost their database columns
+and `id` became the name string; later, the results gained note paths (so names can
+link to their notes) and grid rows carry the era and the time separately so the time
+cell can show them on two lines.
 
 ## License
 

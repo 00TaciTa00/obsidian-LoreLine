@@ -336,7 +336,7 @@ tools/preview/  옵시디언 없이 뷰를 HTML로 뽑는다
 ```bash
 npx esbuild tools/preview/main.ts --bundle --platform=node --format=esm \
   --alias:obsidian=./src/testing/obsidian-stub.ts --outfile=tools/preview/out.mjs
-node tools/preview/out.mjs "C:/Obsidian/Hobby" "핀타디네" preview.html
+node tools/preview/out.mjs "<볼트 경로>" "<세계 폴더>" preview.html
 ```
 
 실제 렌더러와 실제 `styles.css`로 그리고, 데이터도 진짜 볼트에서 읽는다.
@@ -359,8 +359,9 @@ node tools/preview/out.mjs "C:/Obsidian/Hobby" "핀타디네" preview.html
 - vis-timeline, React Query, Drizzle, PostgreSQL — 저장소와 렌더링을 통째로 바꿨다
 
 `lib/timeline`의 계산 함수(`formatDisplayTime`, `computeLanes`, `buildGrid`,
-`buildEraGroups`)는 **본문을 한 줄도 고치지 않고** 옮겼다. 타입에서 DB 컬럼을
-걷어내고 `id`를 이름 문자열로 바꾼 것이 전부다.
+`buildEraGroups`)는 알고리즘을 그대로 옮겼다. 타입에서 DB 컬럼을 걷어내고 `id`를
+이름 문자열로 바꿨고, 그 뒤 이름을 눌러 문서로 가는 기능 때문에 결과에 노트 경로를
+더 싣고, 격자의 시간 칸을 기간과 시각으로 나눠 담도록 고쳤다.
 
 ## 릴리스
 
