@@ -90,19 +90,27 @@ describe("renderEventCard", () => {
     expect(fake.query("loreline-event")?.cssVar("--loreline-card-era")).toBeUndefined();
   });
 
-  it("열 색을 받으면 위쪽 띠를 단다", () => {
+  it("열 색을 받으면 덮는 열마다 한 칸씩 위쪽 띠를 단다", () => {
     const { el, fake } = root();
-    renderEventCard(el, fakeApp(), ev({ title: "a" }), { laneColor: "#22c55e" });
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), {
+      lanes: ["#22c55e", null, "#f97316"],
+    });
 
-    const card = fake.query("loreline-event");
-    expect(card?.hasClass("has-lane")).toBe(true);
-    expect(card?.cssVar("--loreline-card-lane")).toBe("#22c55e");
+    expect(fake.query("loreline-event")?.hasClass("has-lanes")).toBe(true);
+    const segments = fake.queryAll("loreline-event-lane");
+    // 사이에 낀 열은 걸리지 않았으니 색이 없다.
+    expect(segments.map((s) => s.cssVar("--loreline-card-lane"))).toEqual([
+      "#22c55e",
+      undefined,
+      "#f97316",
+    ]);
   });
 
   it("열 색이 없으면 위쪽 띠가 없다", () => {
     const { el, fake } = root();
     renderEventCard(el, fakeApp(), ev({ title: "a" }));
-    expect(fake.query("loreline-event")?.hasClass("has-lane")).toBe(false);
+    expect(fake.query("loreline-event")?.hasClass("has-lanes")).toBe(false);
+    expect(fake.query("loreline-event-lanes")).toBeUndefined();
   });
 
   it("클릭하면 그 노트를 연다", () => {
@@ -292,7 +300,7 @@ describe("renderTime", () => {
 
     const card = fake.query("loreline-event");
     expect(card?.cssVar("--loreline-card-era")).toBe("#a855f7");
-    expect(card?.hasClass("has-lane")).toBe(false);
+    expect(card?.hasClass("has-lanes")).toBe(false);
   });
 
   it("목록 카드에는 공간과 인물 칩을 모두 단다", () => {
@@ -374,8 +382,10 @@ describe("renderGrid", () => {
 
     const cards = fake.queryAll("loreline-event");
     const byTitle = new Map(cards.map((c) => [c.query("loreline-event-title")?.text, c]));
-    expect(byTitle.get("함락")?.cssVar("--loreline-card-lane")).toBe("#22c55e");
-    expect(byTitle.get("추격")?.cssVar("--loreline-card-lane")).toBe("#f97316");
+    const band = (title: string) =>
+      byTitle.get(title)?.queryAll("loreline-event-lane").map((s) => s.cssVar("--loreline-card-lane"));
+    expect(band("함락")).toEqual(["#22c55e"]);
+    expect(band("추격")).toEqual(["#f97316"]);
   });
 
   it("공간별 카드에는 인물 칩을, 인물별 카드에는 공간 칩을 단다", () => {
@@ -396,11 +406,8 @@ describe("renderGrid", () => {
 
     const byCharacter = root();
     renderGrid(byCharacter.el, fakeApp(), world, "character", GRID_OPTIONS);
-    // 두 인물 열에 한 장씩, 각 카드에 공간 칩 하나
-    expect(byCharacter.fake.queryAll("loreline-tag-name").map((e) => e.text)).toEqual([
-      "왕도",
-      "왕도",
-    ]);
+    // 두 인물 열을 가로지르는 카드 한 장에 공간 칩 하나
+    expect(byCharacter.fake.queryAll("loreline-tag-name").map((e) => e.text)).toEqual(["왕도"]);
   });
 
   it("격자 카드는 칩 2개에서 접고, 펼침은 뷰가 준 상태를 따른다", () => {
@@ -475,7 +482,7 @@ describe("renderGrid", () => {
       hidden: new Set(["place-왕도", "place-숲"]),
     });
 
-    expect(fake.queryAllTags("table")).toHaveLength(0);
+    expect(fake.query("loreline-grid")).toBeUndefined();
     expect(fake.query("loreline-empty")?.text).toContain("다시 켜라");
     // 칩은 남아 있어야 되돌릴 수 있다.
     expect(fake.queryAll("loreline-chip")).toHaveLength(2);
@@ -556,6 +563,149 @@ describe("renderGrid - 시간 칸", () => {
     );
 
     expect(fake.query("loreline-grid-time")?.cssVar("--loreline-era-color")).toBe("#a855f7");
+  });
+});
+
+describe("renderGrid - 가로 병합과 흐름선", () => {
+  // 왼쪽부터 베르크 - 어부 - 린다
+  const berg = character("베르크", "#111111", 10);
+  const fisher = character("어부", "#222222", 20);
+  const linda = character("린다", "#333333", 30);
+  const people = [berg, fisher, linda];
+
+  function slots(fake: FakeEl) {
+    return fake.queryAll("loreline-grid-slot").map((slot) => ({
+      title: slot.query("loreline-event-title")?.text,
+      column: slot.cssVar("grid-column"),
+      row: slot.cssVar("grid-row"),
+    }));
+  }
+
+  it("여러 인물이 함께한 사건은 카드 한 장이 그 구간을 가로지른다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({ characters: people, events: [ev({ title: "기어코, 그 날", characters: [berg, linda] })] }),
+      "character",
+      GRID_OPTIONS,
+    );
+
+    // 1번 열은 시간 칸. 베르크(2)부터 린다(4)까지, 끝선은 5.
+    expect(slots(fake)).toEqual([{ title: "기어코, 그 날", column: "2 / 5", row: "1" }]);
+    // 사이에 낀 어부 열은 띠에 색이 없다.
+    expect(
+      fake.queryAll("loreline-event-lane").map((s) => s.cssVar("--loreline-card-lane")),
+    ).toEqual(["#111111", undefined, "#333333"]);
+  });
+
+  it("가로로 겹치는 같은 시각의 사건은 아래 단으로 내려간다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        characters: people,
+        events: [
+          ev({ title: "함께", sortKey: 1000, characters: [berg, linda] }),
+          ev({ title: "혼자", sortKey: 2000, characters: [fisher] }),
+        ],
+      }),
+      "character",
+      GRID_OPTIONS,
+    );
+
+    expect(slots(fake)).toEqual([
+      { title: "함께", column: "2 / 5", row: "1" },
+      { title: "혼자", column: "3 / 4", row: "2" },
+    ]);
+    expect(fake.query("loreline-grid-row")?.cssVar("grid-template-rows")).toBe("repeat(2, auto)");
+  });
+
+  it("열 개수를 격자에 싣는다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({ characters: people, events: [ev({ title: "a", characters: [berg] })] }),
+      "character",
+      { ...GRID_OPTIONS, hidden: new Set(["character-어부"]) },
+    );
+    expect(fake.query("loreline-grid")?.cssVar("--loreline-lane-count")).toBe("2");
+  });
+
+  it("인물 흐름선은 첫 등장부터 마지막 등장까지만, 양끝에 점을 찍는다", () => {
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        characters: [berg],
+        events: [
+          ev({ title: "시작", displayTime: "1년", sortKey: 1000, characters: [berg] }),
+          ev({ title: "사이", displayTime: "2년", sortKey: 2000 }),
+          ev({ title: "끝", displayTime: "3년", sortKey: 3000, characters: [berg] }),
+          ev({ title: "뒤", displayTime: "4년", sortKey: 4000 }),
+        ],
+      }),
+      "character",
+      GRID_OPTIONS,
+    );
+
+    // 인물이 없는 사건은 인물별 격자에 오르지 않으므로 행은 시작·끝 둘뿐이다.
+    const rows = fake.queryAll("loreline-grid-row");
+    expect(rows).toHaveLength(2);
+    const flows = rows.map((row) => row.query("loreline-flow"));
+    expect(flows[0]?.hasClass("is-first")).toBe(true);
+    expect(flows[1]?.hasClass("is-last")).toBe(true);
+    expect(fake.queryAll("loreline-flow-dot")).toHaveLength(2);
+  });
+
+  it("가운데 행은 선만 지나가고 점은 없다", () => {
+    const { el, fake } = root();
+    const other = character("다른이", "#444444", 20);
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        characters: [berg, other],
+        events: [
+          ev({ title: "시작", displayTime: "1년", sortKey: 1000, characters: [berg] }),
+          ev({ title: "사이", displayTime: "2년", sortKey: 2000, characters: [other] }),
+          ev({ title: "끝", displayTime: "3년", sortKey: 3000, characters: [berg] }),
+        ],
+      }),
+      "character",
+      GRID_OPTIONS,
+    );
+
+    const middle = fake.queryAll("loreline-grid-row")[1];
+    const bergBg = middle.queryAll("loreline-grid-bg")[0];
+    const flow = bergBg.query("loreline-flow");
+    expect(flow).toBeDefined();
+    expect(flow?.hasClass("is-first") || flow?.hasClass("is-last")).toBe(false);
+    expect(bergBg.query("loreline-flow-dot")).toBeUndefined();
+  });
+
+  it("공간별 격자에는 흐름선을 긋지 않는다", () => {
+    const palace = place("왕도");
+    const { el, fake } = root();
+    renderGrid(
+      el,
+      fakeApp(),
+      data({
+        places: [palace],
+        events: [
+          ev({ title: "a", displayTime: "1년", sortKey: 1000, places: [palace] }),
+          ev({ title: "b", displayTime: "2년", sortKey: 2000, places: [palace] }),
+        ],
+      }),
+      "place",
+      GRID_OPTIONS,
+    );
+
+    expect(fake.queryAll("loreline-grid-bg")).toHaveLength(2);
+    expect(fake.query("loreline-flow")).toBeUndefined();
   });
 });
 

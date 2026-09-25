@@ -37,6 +37,13 @@ One view, one toolbar toggle; only the contents change.
 In the grids (Place and Character), **events sharing the same in-story time are merged
 into one row** — showing simultaneity across columns is the whole point of a grid.
 
+- An event involving several places or characters is **one card spanning those
+  columns**. Its top band is colored only over the columns it actually involves. Events
+  that would overlap within a row drop to a lower track.
+- The Character grid draws **flow lines**: from the first row a character appears in to
+  the last, with a dot at each end. The line's length is how long that character stays
+  in the story.
+
 ### Click a name to open its note
 
 Every name in a view links to its note.
@@ -373,7 +380,7 @@ exactly** — prefix it as `v0.1.0` and Obsidian will not find it.
   outright
 
 The computation in `lib/timeline` (`formatDisplayTime`, `computeLanes`, `buildGrid`,
-`buildEraGroups`) keeps the original algorithms. The types lost their database columns
+`buildEraGroups`, `layoutRow`, `laneLifespans`) keeps the original algorithms. The types lost their database columns
 and `id` became the name string; later, the results gained note paths (so names can
 link to their notes) and grid rows carry the era and the time separately so the time
 cell can show them on two lines.

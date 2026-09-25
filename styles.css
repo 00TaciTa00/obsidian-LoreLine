@@ -54,9 +54,10 @@
 }
 
 .loreline-body {
+  --loreline-body-pad: 12px;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 12px;
+  padding: var(--loreline-body-pad);
   overflow: auto;
 }
 
@@ -82,8 +83,25 @@
   cursor: pointer;
 }
 
-.loreline-event.has-lane {
-  border-top: 3px solid var(--loreline-card-lane);
+/*
+ * 격자 카드의 위쪽 띠. 카드가 덮는 열마다 한 칸이고, 사건이 걸린 열에만 색이
+ * 있다. 바탕을 옅게 깔아 사이에 낀 열에서도 띠가 이어져 한 장으로 읽힌다.
+ * 카드 안쪽 여백을 거슬러 가장자리까지 닿게 한다.
+ */
+.loreline-event.has-lanes {
+  overflow: hidden;
+}
+
+.loreline-event-lanes {
+  display: flex;
+  height: 3px;
+  margin: -6px -10px 6px;
+  background: var(--background-modifier-border);
+}
+
+.loreline-event-lane {
+  flex: 1 1 0;
+  background: var(--loreline-card-lane, transparent);
 }
 
 .loreline-event:hover {
@@ -207,36 +225,49 @@
 
 /* ---- 공간별·인물별 격자 ---- */
 
+/*
+ * 행마다 CSS grid 하나. 카드가 여러 열을 가로지르려면 표의 칸에 넣을 수 없다.
+ * 행끼리 따로 grid라 열 폭이 내용을 따라가면 서로 어긋난다. 그래서 폭을
+ * 고정한다 — 모든 열이 같은 폭이어야 가로로 훑기도 쉽다.
+ */
 .loreline-grid {
-  border-collapse: separate;
-  border-spacing: 0;
-  /* 필요한 만큼만 넓어진다. 100%로 늘리면 열 수가 적을 때 한 열만 부풀어
-     오른다 — 사건이 많은 열이 남는 폭을 다 가져가기 때문이다. */
+  --loreline-time-col: 10rem;
+  --loreline-lane-col: 240px;
+  --loreline-grid-columns: var(--loreline-time-col)
+    repeat(var(--loreline-lane-count, 1), var(--loreline-lane-col));
+  /* 필요한 만큼만 넓어진다. */
   width: max-content;
 }
 
-.loreline-grid th,
-.loreline-grid td {
-  border-bottom: 1px solid var(--background-modifier-border);
-  border-right: 1px solid var(--background-modifier-border);
-  padding: 6px;
-  vertical-align: top;
-  text-align: left;
+.loreline-grid-head,
+.loreline-grid-row {
+  display: grid;
+  grid-template-columns: var(--loreline-grid-columns);
 }
 
-.loreline-grid thead th {
+/*
+ * sticky는 스크롤 영역의 안쪽 여백 안쪽에 붙는다. 0에 붙이면 여백 띠(12px)로
+ * 지나간 행이 비쳐 보여서, 여백만큼 바깥으로 끌어 올린다.
+ */
+.loreline-grid-head {
   position: sticky;
-  top: 0;
+  top: calc(-1 * var(--loreline-body-pad, 0px));
+  z-index: 3;
   background: var(--background-primary);
-  z-index: 1;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.loreline-grid-row {
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .loreline-grid-lane {
   --loreline-lane-color: var(--text-muted);
-  /* 모든 열을 같은 폭으로 고정한다. 내용 길이에 따라 열이 들쭉날쭉하면
-     가로로 훑기 어렵다. */
-  width: 240px;
+  padding: 6px;
   border-top: 3px solid var(--loreline-lane-color);
+  border-right: 1px solid var(--background-modifier-border);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .loreline-lane-name {
@@ -249,30 +280,94 @@
   margin-left: 6px;
 }
 
+/*
+ * 가로로 스크롤해도 지금 보는 사건이 언제 일인지 보이게 왼쪽에 고정한다.
+ * 배경을 직접 줘야 밑을 지나가는 카드가 글자에 겹쳐 보이지 않는다.
+ */
 .loreline-grid-corner,
 .loreline-grid-time {
   --loreline-era-color: transparent;
   position: sticky;
-  left: 0;
+  left: calc(-1 * var(--loreline-body-pad, 0px));
+  z-index: 2;
+  padding: 6px;
   background: var(--background-primary);
-  min-width: 120px;
   border-left: 3px solid var(--loreline-era-color);
+  border-right: 1px solid var(--background-modifier-border);
   color: var(--text-muted);
-  font-weight: var(--font-normal);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* 한국어가 단어 가운데서 갈라지지 않게 한다("알라그 시" / "대"). */
+  word-break: keep-all;
+}
+
+.loreline-grid-corner {
+  border-top: 3px solid transparent;
+  z-index: 4;
+}
+
+/* 단이 여러 개여도 시각은 한 번만 쓴다. */
+.loreline-grid-time {
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+
+/* 열 배경: 구분선과 흐름선. 카드는 그 위 층에 따로 놓인다. */
+.loreline-grid-bg {
+  --loreline-lane-color: var(--text-muted);
+  position: relative;
+  grid-row: 1 / -1;
+  border-right: 1px solid var(--background-modifier-border);
+}
+
+.loreline-flow {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--loreline-lane-color);
+  opacity: 0.4;
+}
+
+/* 첫 행은 가운데서 시작하고 마지막 행은 가운데서 끝난다. */
+.loreline-flow.is-first {
+  top: 50%;
+}
+
+.loreline-flow.is-last {
+  bottom: 50%;
+}
+
+.loreline-flow-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--loreline-lane-color);
+}
+
+.loreline-grid-slot {
+  position: relative;
   z-index: 1;
-}
-
-.loreline-grid thead .loreline-grid-corner {
-  z-index: 3;
-}
-
-.loreline-grid-cell {
+  min-width: 0;
+  padding: 6px;
   /* 긴 제목이 열 폭을 밀어내지 않게 한다. */
   overflow-wrap: anywhere;
 }
 
-.loreline-grid-cell .loreline-event:last-child {
+.loreline-grid-slot .loreline-event {
   margin-bottom: 0;
+}
+
+.loreline-grid > .loreline-empty {
+  position: sticky;
+  left: 0;
+  width: fit-content;
 }
 
 /* ---- 열 필터 (공간별·인물별) ---- */

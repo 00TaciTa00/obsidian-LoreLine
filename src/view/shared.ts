@@ -128,8 +128,10 @@ function renderChips(card: HTMLElement, options: ChipOptions): void {
  * 카드의 색 띠가 맥락을 말한다(원본 c6a8456). 사건마다 따로 색을 주던 것은
  * 기간·공간과 뜻이 겹쳐 없앴다.
  * - 왼쪽 띠: 그 사건의 기간 색. 기간이 없으면 띠 자리만 남는다
- * - 위쪽 띠: 격자에서만, 그 카드가 놓인 열(공간·인물)의 색. 시간별 목록은 열이
- *   없으므로 두지 않는다
+ * - 위쪽 띠: 격자에서만. 카드가 덮는 열마다 한 칸씩, 그 사건이 실제로 걸린
+ *   열에만 색을 찍는다(원본 432028c). 사이에 낀 열은 옅은 바탕만 남겨, 띠가
+ *   끊긴 별개의 막대가 아니라 한 장이라는 것이 읽히게 한다. 시간별 목록은
+ *   열이 없으므로 두지 않는다
  *
  * 읽기 전용이라 카드가 하는 일은 노트 열기 하나뿐이다.
  */
@@ -137,14 +139,23 @@ export function renderEventCard(
   parent: HTMLElement,
   app: App,
   event: EventItem,
-  options: { laneColor?: string; chips?: ChipOptions } = {},
+  options: {
+    /** 카드가 덮는 열의 색. 걸리지 않은 열은 null. 격자에서만 준다. */
+    lanes?: (string | null)[];
+    chips?: ChipOptions;
+  } = {},
 ): HTMLElement {
   const card = parent.createDiv({ cls: "loreline-event" });
 
   if (event.era) card.style.setProperty("--loreline-card-era", event.era.color);
-  if (options.laneColor) {
-    card.addClass("has-lane");
-    card.style.setProperty("--loreline-card-lane", options.laneColor);
+  if (options.lanes && options.lanes.length > 0) {
+    card.addClass("has-lanes");
+    const band = card.createDiv({ cls: "loreline-event-lanes" });
+    band.setAttribute("aria-hidden", "true");
+    for (const color of options.lanes) {
+      const segment = band.createSpan({ cls: "loreline-event-lane" });
+      if (color) segment.style.setProperty("--loreline-card-lane", color);
+    }
   }
 
   card.createDiv({ cls: "loreline-event-title", text: event.title });
