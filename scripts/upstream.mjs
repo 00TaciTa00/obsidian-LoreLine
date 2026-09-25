@@ -3,6 +3,7 @@
  *
  *   npm run upstream              # UPSTREAM.md의 "검토 완료" 뒤 커밋만
  *   npm run upstream -- <커밋>    # 그 커밋 뒤부터
+ *   npm run upstream -- --json    # 기계용. GitHub 워크플로가 이슈 본문을 여기서 얻는다
  *
  * 원본 clone 위치는 LORELINE_UPSTREAM 환경변수, 없으면 이 레포의 형제 폴더
  * ../loreline 이다. 스크립트가 origin을 fetch하지만 원본 작업 트리는 건드리지
@@ -82,7 +83,9 @@ try {
 
 git("fetch", "--quiet", "origin");
 
-const since = process.argv[2] ?? readMarker();
+const args = process.argv.slice(2);
+const asJson = args.includes("--json");
+const since = args.find((arg) => !arg.startsWith("--")) ?? readMarker();
 
 /** 원본이 blame에서 빼 둔 커밋. 일괄 서식 정리라 옮길 내용이 없다. */
 function formattingCommits() {
@@ -99,11 +102,66 @@ function formattingCommits() {
       .filter((line) => /^[0-9a-f]{40}$/.test(line)),
   );
 }
+
+function kindOf(classified) {
+  if (classified.some((f) => f.kind === "반영")) return "반영";
+  if (classified.some((f) => f.kind === "참고")) return "참고";
+  return "무시";
+}
+
 const formatting = formattingCommits();
 const head = git("rev-parse", "--short", "origin/main");
-
 const log = git("log", "--reverse", "--format=%h%x09%ad%x09%s", "--date=short", `${since}..origin/main`);
-const commits = log ? log.split("\n") : [];
+
+const commits = (log ? log.split("\n") : []).map((line) => {
+  const [sha, date, subject] = line.split("\t");
+  if (formatting.has(git("rev-parse", sha))) {
+    return { sha, date, subject, kind: "서식", files: [] };
+  }
+  const files = git("show", "--name-only", "--format=", sha)
+    .split("\n")
+    .filter(Boolean)
+    .map((path) => ({ path, ...classify(path) }));
+  return { sha, date, subject, kind: kindOf(files), files };
+});
+
+const tally = { 반영: 0, 참고: 0, 서식: 0, 무시: 0 };
+for (const commit of commits) tally[commit.kind] += 1;
+
+/** 짝이 있는 파일만. 무시할 파일까지 늘어놓으면 읽을 것이 묻힌다. */
+function relevantFiles(commit) {
+  return commit.files.filter((file) => file.kind !== "무시");
+}
+
+/** GitHub 이슈 본문. 워크플로가 이것을 그대로 쓴다. */
+function toMarkdown() {
+  const lines = [
+    `원본 [LoreLine](https://github.com/00TaciTa00/LoreLine)에 검토할 커밋이 있다.`,
+    "",
+    `범위: \`${since}..${head}\` — 반영 ${tally.반영} · 참고 ${tally.참고} · 서식 ${tally.서식} · 무시 ${tally.무시}`,
+    "",
+  ];
+  for (const commit of commits) {
+    if (commit.kind !== "반영" && commit.kind !== "참고") continue;
+    const link = `https://github.com/00TaciTa00/LoreLine/commit/${commit.sha}`;
+    lines.push(`- [ ] **${commit.kind}** [\`${commit.sha}\`](${link}) ${commit.date} ${commit.subject}`);
+    for (const file of relevantFiles(commit)) {
+      lines.push(`  - \`${file.path}\`${file.target ? ` → ${file.target}` : ""}`);
+    }
+  }
+  lines.push(
+    "",
+    `검토 절차는 \`UPSTREAM.md\`에 있다. 검토를 마치면 "검토 완료"를 \`${head}\`로 올리고 이 이슈를 닫는다.`,
+  );
+  return lines.join("\n");
+}
+
+if (asJson) {
+  console.log(
+    JSON.stringify({ since, head, tally, commits, markdown: toMarkdown() }, null, 2),
+  );
+  process.exit(0);
+}
 
 console.log(`원본: ${upstream}`);
 console.log(`범위: ${since}..origin/main (${head}) — 커밋 ${commits.length}개\n`);
@@ -113,30 +171,9 @@ if (commits.length === 0) {
   process.exit(0);
 }
 
-const tally = { 반영: 0, 참고: 0, 서식: 0, 무시: 0 };
-
-for (const line of commits) {
-  const [sha, date, subject] = line.split("\t");
-
-  if (formatting.has(git("rev-parse", sha))) {
-    tally.서식 += 1;
-    console.log(`[서식] ${sha} ${date} ${subject}`);
-    continue;
-  }
-  const files = git("show", "--name-only", "--format=", sha).split("\n").filter(Boolean);
-  const classified = files.map((path) => ({ path, ...classify(path) }));
-
-  const kind = classified.some((f) => f.kind === "반영")
-    ? "반영"
-    : classified.some((f) => f.kind === "참고")
-      ? "참고"
-      : "무시";
-  tally[kind] += 1;
-
-  console.log(`[${kind}] ${sha} ${date} ${subject}`);
-  if (kind === "무시") continue;
-  for (const file of classified) {
-    if (file.kind === "무시") continue;
+for (const commit of commits) {
+  console.log(`[${commit.kind}] ${commit.sha} ${commit.date} ${commit.subject}`);
+  for (const file of relevantFiles(commit)) {
     console.log(`         ${file.path}${file.target ? `  →  ${file.target}` : ""}`);
   }
 }

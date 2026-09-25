@@ -1,0 +1,74 @@
+name: Upstream
+
+# 원본 LoreLine 웹앱에 검토할 커밋이 생겼는지 매일 본다.
+#
+# 이슈는 하나만 열어 두고 갱신한다. 매일 새 이슈를 열면 쌓이기만 한다.
+# UPSTREAM.md의 "검토 완료"가 원본을 따라잡아 볼 것이 없어지면 그 이슈를 닫는다.
+# 반영 자체는 여기서 하지 않는다 — 옵시디언에서 눈으로 봐야 끝나는 일이다.
+on:
+  schedule:
+    - cron: "0 0 * * *" # 매일 09:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream
+  cancel-in-progress: false
+
+env:
+  LABEL: upstream-sync
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # 스크립트가 원본의 커밋 범위를 보므로 얕게 받으면 안 된다.
+      - name: 원본 받기
+        run: git clone --quiet https://github.com/00TaciTa00/LoreLine.git "$RUNNER_TEMP/loreline"
+
+      - name: 새 커밋 가려내기
+        env:
+          LORELINE_UPSTREAM: ${{ runner.temp }}/loreline
+        run: node scripts/upstream.mjs --json > "$RUNNER_TEMP/upstream.json"
+
+      - name: 이슈 열기·갱신·닫기
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          json="$RUNNER_TEMP/upstream.json"
+          count=$(jq '.tally["반영"] + .tally["참고"]' "$json")
+          head=$(jq -r '.head' "$json")
+          since=$(jq -r '.since' "$json")
+
+          gh label create "$LABEL" --color "a855f7" \
+            --description "원본 LoreLine 웹앱의 변경 검토" 2>/dev/null || true
+
+          open=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
+
+          if [ "$count" -eq 0 ]; then
+            echo "검토할 커밋이 없다 ($since..$head)."
+            if [ -n "$open" ]; then
+              gh issue close "$open" --comment "UPSTREAM.md의 검토 완료가 원본 \`$head\`까지 따라잡았다."
+            fi
+            exit 0
+          fi
+
+          jq -r '.markdown' "$json" > "$RUNNER_TEMP/body.md"
+          title="원본 업데이트 검토: ${count}건 ($since..$head)"
+
+          if [ -n "$open" ]; then
+            gh issue edit "$open" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            echo "이슈 #$open 갱신"
+          else
+            gh issue create --title "$title" --label "$LABEL" --body-file "$RUNNER_TEMP/body.md"
+          fi
