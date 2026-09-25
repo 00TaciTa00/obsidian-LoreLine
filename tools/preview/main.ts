@@ -27,9 +27,14 @@ import { renderGrid } from "../../src/view/renderGrid";
 import { renderTime } from "../../src/view/renderTime";
 import { FakeEl, fakeElement } from "../../src/testing/fake-dom";
 
-const vault = process.argv[2] ?? "C:/Obsidian/Hobby";
-const folder = process.argv[3] ?? "핀타디네";
+const [vault, folder] = process.argv.slice(2);
 const out = process.argv[4] ?? "preview.html";
+
+// 볼트 경로는 기기마다 다르다. 기본값을 두면 없는 곳을 읽고 빈 화면을 낸다.
+if (!vault || folder === undefined) {
+  console.error('사용법: node tools/preview/out.mjs "<볼트 경로>" "<대상 폴더>" [출력.html]');
+  process.exit(1);
+}
 
 /**
  * 옵시디언 metadataCache 대신 쓰는 최소 frontmatter 파서.

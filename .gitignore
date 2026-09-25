@@ -3,3 +3,4 @@ main.js
 *.js.map
 preview*.html
 tools/preview/out.mjs
+deploy.local.json

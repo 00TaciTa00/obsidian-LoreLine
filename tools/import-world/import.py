@@ -12,8 +12,11 @@ import re
 import sys
 
 SRC = ".import-tmp"
-DEST = sys.argv[1] if len(sys.argv) > 1 else "C:/Obsidian/Hobby/FF14-판데모니움"
-WORLD_NAME = sys.argv[2] if len(sys.argv) > 2 else "FF14-판데모니움"
+# 있는 파일을 덮어쓰는 도구라 쓸 자리를 기본값으로 두지 않는다.
+if len(sys.argv) < 3:
+    sys.exit('사용법: python tools/import-world/import.py "<볼트>/<세계 폴더>" "<세계 이름>"')
+DEST = sys.argv[1]
+WORLD_NAME = sys.argv[2]
 
 FOLDERS = {"event": "사건", "character": "인물", "place": "장소", "era": "기간"}
 

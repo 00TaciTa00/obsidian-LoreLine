@@ -70,8 +70,14 @@ npm install
 npm run deploy          # check → build → copy into the vault
 ```
 
-`npm run deploy` targets `C:/Obsidian/Hobby` by default. Point it elsewhere with
-`OBSIDIAN_VAULT`:
+Tell `npm run deploy` which vault to copy into, either with a `deploy.local.json`
+at the repo root (git-ignored):
+
+```json
+{ "vault": "D:/MyVault" }
+```
+
+or with `OBSIDIAN_VAULT`, which takes precedence:
 
 ```powershell
 $env:OBSIDIAN_VAULT = "D:/MyVault"; npm run deploy   # PowerShell
@@ -80,6 +86,9 @@ $env:OBSIDIAN_VAULT = "D:/MyVault"; npm run deploy   # PowerShell
 ```bash
 OBSIDIAN_VAULT="D:/MyVault" npm run deploy           # bash
 ```
+
+The deploy refuses to copy when the path is unset, missing, or has no `.obsidian`
+folder (open it as a vault in Obsidian once first).
 
 ## Worlds
 

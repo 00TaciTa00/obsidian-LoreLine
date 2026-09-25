@@ -62,7 +62,13 @@ npm install
 npm run deploy          # 검사 → 빌드 → 볼트로 복사
 ```
 
-기본 대상은 `C:/Obsidian/Hobby`다. 다른 볼트라면 `OBSIDIAN_VAULT`로 바꾼다.
+복사할 볼트는 레포 최상위의 `deploy.local.json`(git이 무시한다)으로 정한다.
+
+```json
+{ "vault": "D:/내볼트" }
+```
+
+`OBSIDIAN_VAULT`를 주면 그쪽이 앞선다.
 
 ```powershell
 $env:OBSIDIAN_VAULT = "D:/내볼트"; npm run deploy   # PowerShell
@@ -71,6 +77,9 @@ $env:OBSIDIAN_VAULT = "D:/내볼트"; npm run deploy   # PowerShell
 ```bash
 OBSIDIAN_VAULT="D:/내볼트" npm run deploy           # bash
 ```
+
+경로를 안 정했거나, 폴더가 없거나, `.obsidian`이 없으면(옵시디언에서 볼트로 한
+번도 안 연 폴더) 복사하지 않고 멈춘다.
 
 복사되는 것은 `main.js`, `manifest.json`, `styles.css` 세 개이고, 위치는
 `<볼트>/.obsidian/plugins/loreline/`이다. 옵시디언 설정 → 커뮤니티 플러그인에서

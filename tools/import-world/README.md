@@ -12,7 +12,7 @@ for kind in eras places characters events; do
 done
 
 # 2. 볼트에 쓴다
-python tools/import-world/import.py "C:/Obsidian/Hobby/세계 이름" "세계 이름"
+python tools/import-world/import.py "<볼트 경로>/세계 이름" "세계 이름"
 ```
 
 받아 오는 것과 만드는 것:
