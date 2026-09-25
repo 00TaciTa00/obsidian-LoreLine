@@ -41,7 +41,10 @@ export function renderTime(container: HTMLElement, app: App, data: LoreData): vo
 
       const list = block.createDiv({ cls: "loreline-time-events" });
       for (const event of time.events) {
-        renderEventCard(list, app, event);
+        // 목록은 폭이 넉넉해 접지 않는다. 공간 먼저, 인물 다음.
+        renderEventCard(list, app, event, {
+          chips: { entities: [...event.places, ...event.characters] },
+        });
       }
     }
   }

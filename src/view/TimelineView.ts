@@ -80,6 +80,12 @@ export class TimelineView extends ItemView {
     character: new Set(),
   };
 
+  /**
+   * 격자 카드 중 칩을 다 펼쳐 둔 사건의 id. 탭에 저장하지는 않는다 — 잠깐
+   * 들여다보려고 펼치는 것이라 재시작 뒤까지 남길 이유가 없다.
+   */
+  private expandedChips = new Set<string>();
+
   private toolbarEl: HTMLElement | null = null;
   private bodyEl: HTMLElement | null = null;
 
@@ -338,6 +344,11 @@ export class TimelineView extends ItemView {
       onShowAll: () => {
         this.hidden[axis].clear();
         this.app.workspace.requestSaveLayout();
+        this.renderBody();
+      },
+      expanded: this.expandedChips,
+      onToggleChips: (eventId) => {
+        if (!this.expandedChips.delete(eventId)) this.expandedChips.add(eventId);
         this.renderBody();
       },
     });

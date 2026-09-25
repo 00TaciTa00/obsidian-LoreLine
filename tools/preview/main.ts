@@ -118,6 +118,8 @@ function renderPane(data: LoreData, mode: "all" | "place" | "character"): string
     // 미리보기는 정지 화면이라 필터는 그려만 두고 아무것도 감추지 않는다.
     renderGrid(body, app, data, mode, {
       hidden: new Set<string>(),
+      expanded: new Set<string>(),
+      onToggleChips: () => {},
       onToggle: () => {},
       onShowAll: () => {},
     });

@@ -13,7 +13,19 @@ export type GridOptions = {
   onToggle: (laneId: string) => void;
   /** "모두 보기"를 눌렀을 때 */
   onShowAll: () => void;
+  /** 칩을 다 펼쳐 둔 사건의 id. 뷰가 들고 있어 다시 그려도 유지된다. */
+  expanded: Set<string>;
+  /** 카드의 +N / -N 을 눌렀을 때 */
+  onToggleChips: (eventId: string) => void;
 };
+
+/**
+ * 격자 카드에 접힌 채 보일 칩 수 (원본 92e3654).
+ *
+ * 3개면 이름이 조금만 길어도 좁은 열에서 두 줄로 넘어가 카드 높이가
+ * 들쭉날쭉했다. 2개면 대개 한 줄에 들어간다.
+ */
+const CHIP_LIMIT = 2;
 
 /** 열을 끄고 켜는 칩 줄. 사건이 없는 열도 남아 있어야 켜 볼 수 있다. */
 function renderFilter(
@@ -126,7 +138,16 @@ export function renderGrid(
     for (const lane of shown) {
       const td = tr.createEl("td", { cls: "loreline-grid-cell" });
       for (const event of row.cells.get(lane.id) ?? []) {
-        renderEventCard(td, app, event, { laneColor: lane.color });
+        renderEventCard(td, app, event, {
+          laneColor: lane.color,
+          // 격자의 축이 아닌 쪽을 곁들인다. 공간별이면 인물, 인물별이면 공간.
+          chips: {
+            entities: axis === "place" ? event.characters : event.places,
+            limit: CHIP_LIMIT,
+            expanded: options.expanded.has(event.id),
+            onToggle: () => options.onToggleChips(event.id),
+          },
+        });
       }
     }
   }

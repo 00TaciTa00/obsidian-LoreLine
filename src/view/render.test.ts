@@ -61,6 +61,8 @@ const GRID_OPTIONS: GridOptions = {
   hidden: new Set<string>(),
   onToggle: () => {},
   onShowAll: () => {},
+  expanded: new Set<string>(),
+  onToggleChips: () => {},
 };
 
 describe("renderEventCard", () => {
@@ -166,6 +168,89 @@ describe("renderEventCard", () => {
   });
 });
 
+describe("renderEventCard - 딸린 항목 칩", () => {
+  const people = [character("베르크"), character("린다"), character("아나이스")];
+
+  function names(fake: FakeEl): string[] {
+    return fake.queryAll("loreline-tag-name").map((e) => e.text);
+  }
+
+  it("제한이 없으면 모두 보이고 접기 버튼이 없다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), { chips: { entities: people } });
+
+    expect(names(fake)).toEqual(["베르크", "린다", "아나이스"]);
+    expect(fake.query("loreline-tag-more")).toBeUndefined();
+  });
+
+  it("칩에 그 항목의 색을 싣는다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), {
+      chips: { entities: [place("왕도", "#22c55e")] },
+    });
+    expect(fake.query("loreline-tag")?.cssVar("--loreline-tag-color")).toBe("#22c55e");
+  });
+
+  it("넘치는 만큼 접고 +N을 단다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), {
+      chips: { entities: people, limit: 2, onToggle: () => {} },
+    });
+
+    expect(names(fake)).toEqual(["베르크", "린다"]);
+    const more = fake.query("loreline-tag-more");
+    expect(more?.text).toBe("+1");
+    expect(more?.attr("aria-expanded")).toBe("false");
+    // 부호만으로는 뜻이 좁다. 낭독기에는 이름을 준다.
+    expect(more?.attr("aria-label")).toBe("1개 더 보기");
+  });
+
+  it("펼치면 모두 보이고 -N이 된다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), {
+      chips: { entities: people, limit: 2, expanded: true, onToggle: () => {} },
+    });
+
+    expect(names(fake)).toHaveLength(3);
+    expect(fake.query("loreline-tag-more")?.text).toBe("-1");
+    expect(fake.query("loreline-tag-more")?.attr("aria-label")).toBe("1개 접기");
+  });
+
+  it("접힐 것이 없으면 펼친 상태여도 버튼을 두지 않는다", () => {
+    // 펼쳐 둔 사이에 딸린 항목이 줄면 "-0"이 남으면 안 된다.
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), {
+      chips: { entities: people.slice(0, 2), limit: 2, expanded: true, onToggle: () => {} },
+    });
+    expect(fake.query("loreline-tag-more")).toBeUndefined();
+  });
+
+  it("딸린 항목이 없으면 칩 줄을 그리지 않는다", () => {
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), { chips: { entities: [] } });
+    expect(fake.query("loreline-tags")).toBeUndefined();
+  });
+
+  it("버튼을 눌러도 카드의 노트 열기로 번지지 않는다", () => {
+    const onToggle = vi.fn();
+    const { el, fake } = root();
+    renderEventCard(el, fakeApp(), ev({ title: "a" }), {
+      chips: { entities: people, limit: 2, onToggle },
+    });
+
+    const more = fake.query("loreline-tag-more")!;
+    const click = vi.fn();
+    more.dispatch("click", { stopPropagation: click });
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(click).toHaveBeenCalled();
+
+    // Enter·스페이스도 카드의 keydown까지 가면 노트가 열린다.
+    const key = vi.fn();
+    more.dispatch("keydown", { key: "Enter", stopPropagation: key });
+    expect(key).toHaveBeenCalled();
+  });
+});
+
 describe("renderTime", () => {
   const third = era("제3 성력", "#a855f7", 10);
   const fourth = era("제4 성력", "#3b82f6", 20);
@@ -208,6 +293,34 @@ describe("renderTime", () => {
     const card = fake.query("loreline-event");
     expect(card?.cssVar("--loreline-card-era")).toBe("#a855f7");
     expect(card?.hasClass("has-lane")).toBe(false);
+  });
+
+  it("목록 카드에는 공간과 인물 칩을 모두 단다", () => {
+    const { el, fake } = root();
+    renderTime(
+      el,
+      fakeApp(),
+      data({
+        eras: [third],
+        events: [
+          ev({
+            title: "a",
+            era: third,
+            places: [place("왕도"), place("숲")],
+            characters: [character("베르크"), character("린다"), character("아나이스")],
+          }),
+        ],
+      }),
+    );
+
+    expect(fake.queryAll("loreline-tag-name").map((e) => e.text)).toEqual([
+      "왕도",
+      "숲",
+      "베르크",
+      "린다",
+      "아나이스",
+    ]);
+    expect(fake.query("loreline-tag-more")).toBeUndefined();
   });
 
   it("사건이 없는 기간도 남긴다", () => {
@@ -263,6 +376,57 @@ describe("renderGrid", () => {
     const byTitle = new Map(cards.map((c) => [c.query("loreline-event-title")?.text, c]));
     expect(byTitle.get("함락")?.cssVar("--loreline-card-lane")).toBe("#22c55e");
     expect(byTitle.get("추격")?.cssVar("--loreline-card-lane")).toBe("#f97316");
+  });
+
+  it("공간별 카드에는 인물 칩을, 인물별 카드에는 공간 칩을 단다", () => {
+    const berg = character("베르크");
+    const linda = character("린다");
+    const world = data({
+      places: [palace],
+      characters: [berg, linda],
+      events: [ev({ title: "회담", places: [palace], characters: [berg, linda] })],
+    });
+
+    const byPlace = root();
+    renderGrid(byPlace.el, fakeApp(), world, "place", GRID_OPTIONS);
+    expect(byPlace.fake.queryAll("loreline-tag-name").map((e) => e.text)).toEqual([
+      "베르크",
+      "린다",
+    ]);
+
+    const byCharacter = root();
+    renderGrid(byCharacter.el, fakeApp(), world, "character", GRID_OPTIONS);
+    // 두 인물 열에 한 장씩, 각 카드에 공간 칩 하나
+    expect(byCharacter.fake.queryAll("loreline-tag-name").map((e) => e.text)).toEqual([
+      "왕도",
+      "왕도",
+    ]);
+  });
+
+  it("격자 카드는 칩 2개에서 접고, 펼침은 뷰가 준 상태를 따른다", () => {
+    const people = [character("가"), character("나"), character("다"), character("라")];
+    const world = data({
+      places: [palace],
+      characters: people,
+      events: [ev({ title: "회담", places: [palace], characters: people })],
+    });
+
+    const folded = root();
+    renderGrid(folded.el, fakeApp(), world, "place", GRID_OPTIONS);
+    expect(folded.fake.queryAll("loreline-tag")).toHaveLength(2);
+    expect(folded.fake.query("loreline-tag-more")?.text).toBe("+2");
+
+    const onToggleChips = vi.fn();
+    const open = root();
+    renderGrid(open.el, fakeApp(), world, "place", {
+      ...GRID_OPTIONS,
+      expanded: new Set(["회담.md"]),
+      onToggleChips,
+    });
+    expect(open.fake.queryAll("loreline-tag")).toHaveLength(4);
+
+    open.fake.query("loreline-tag-more")!.dispatch("click", { stopPropagation: () => {} });
+    expect(onToggleChips).toHaveBeenCalledWith("회담.md");
   });
 
   it("같은 작중 시각은 한 행으로 묶는다", () => {

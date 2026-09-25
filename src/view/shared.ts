@@ -61,6 +61,67 @@ function shortDescription(description: string | null): string | null {
     : oneLine;
 }
 
+/** 칩으로 보여줄 딸린 공간·인물 */
+export type ChipEntity = { name: string; color: string };
+
+/**
+ * 카드의 칩 줄을 어떻게 그릴지.
+ *
+ * 격자 열은 좁아서 칩을 다 펼치면 카드 높이가 들쭉날쭉해진다. `limit`을 넘는
+ * 만큼은 접어 두고 버튼으로 펼친다. 펼침 상태는 뷰가 들고 있어야 다시 그려도
+ * 유지된다.
+ */
+export type ChipOptions = {
+  entities: ChipEntity[];
+  /** 접었을 때 보일 최대 개수. 없으면 다 보인다. */
+  limit?: number;
+  expanded?: boolean;
+  onToggle?: () => void;
+};
+
+/**
+ * 딸린 공간·인물 칩 줄 (원본 EntityChip, 92e3654).
+ *
+ * 칩은 누를 수 없다. 카드 전체가 이미 노트로 가는 링크라, 칩까지 링크로 두면
+ * 무엇이 열릴지 헷갈린다.
+ */
+function renderChips(card: HTMLElement, options: ChipOptions): void {
+  const { entities, limit, expanded = false, onToggle } = options;
+  if (entities.length === 0) return;
+
+  const hiddenCount = limit === undefined ? 0 : Math.max(0, entities.length - limit);
+  const shown = expanded || limit === undefined ? entities : entities.slice(0, limit);
+
+  const row = card.createDiv({ cls: "loreline-tags" });
+  for (const entity of shown) {
+    const tag = row.createSpan({ cls: "loreline-tag" });
+    tag.setAttribute("title", entity.name);
+    tag.style.setProperty("--loreline-tag-color", entity.color);
+    tag.createSpan({ cls: "loreline-tag-dot" });
+    tag.createSpan({ cls: "loreline-tag-name", text: entity.name });
+  }
+
+  // 접힌 개수가 0이면 버튼을 두지 않는다. 펼쳐 둔 사이에 딸린 항목이 줄면
+  // "-0"이 남기 때문이다. 버튼이 사라져도 칩은 모두 보이는 상태라 갇히지 않는다.
+  if (hiddenCount === 0 || !onToggle) return;
+
+  // 글자는 부호와 개수만. "접기"는 칩 한 개 자리를 잡아먹는다. 개수를 붙여
+  // 두면 접은 뒤 몇 개가 숨는지 미리 보인다. 낭독기에는 이름을 따로 준다.
+  const more = row.createEl("button", {
+    cls: "loreline-tag-more",
+    text: expanded ? `-${hiddenCount}` : `+${hiddenCount}`,
+  });
+  more.setAttribute("aria-expanded", String(expanded));
+  more.setAttribute("aria-label", expanded ? `${hiddenCount}개 접기` : `${hiddenCount}개 더 보기`);
+
+  // 카드가 링크라 이벤트가 번지면 노트가 같이 열린다.
+  more.addEventListener("click", (source) => {
+    source.stopPropagation();
+    onToggle();
+  });
+  more.addEventListener("keydown", (source) => source.stopPropagation());
+}
+
 /**
  * 사건 하나를 카드로 그린다. 세 뷰가 모두 같은 카드를 쓴다.
  *
@@ -76,7 +137,7 @@ export function renderEventCard(
   parent: HTMLElement,
   app: App,
   event: EventItem,
-  options: { laneColor?: string } = {},
+  options: { laneColor?: string; chips?: ChipOptions } = {},
 ): HTMLElement {
   const card = parent.createDiv({ cls: "loreline-event" });
 
@@ -92,6 +153,8 @@ export function renderEventCard(
   if (description) {
     card.createDiv({ cls: "loreline-event-desc", text: description });
   }
+
+  if (options.chips) renderChips(card, options.chips);
 
   asNoteLink(card, app, event.path, `${event.title} — ${event.displayTime}`);
 
