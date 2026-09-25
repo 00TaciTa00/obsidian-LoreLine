@@ -1,4 +1,4 @@
-import type { App, TFile } from "obsidian";
+import type { App, CachedMetadata, TFile } from "obsidian";
 
 import {
   extractDescription,
@@ -27,6 +27,15 @@ export type ScanResult = {
 /** 노트 한 장을 훑어 얻은 것. 파일이 그대로면 다시 만들 이유가 없다. */
 type CacheEntry = {
   mtime: number;
+  /**
+   * 이 항목을 만들 때 metadataCache가 준 파싱 결과.
+   *
+   * mtime만으로는 부족하다. 파일이 바뀐 직후 metadataCache가 아직 옛 파싱
+   * 결과를 주는 틈에 스캔이 돌면, 옛 frontmatter가 새 mtime을 달고 캐시에
+   * 들어간다. 파싱이 끝나도 mtime은 같으니 그대로 적중해 옛 값이 남는다.
+   * 옵시디언은 다시 파싱할 때만 새 객체를 만들므로, 같은 객체인지를 함께 본다.
+   */
+  metadata: CachedMetadata;
   kind: "event" | "character" | "place" | "era";
   /** 확장자를 뺀 파일명. 인물·장소·기간은 이것이 곧 이름이다. */
   name: string;
@@ -184,22 +193,30 @@ export async function scanVault(
   const warnings: string[] = [];
   const seen = new Set<string>();
 
-  /** 캐시가 못 쓰는 것들. 본문을 읽어야 한다. */
-  const toRead: { file: TFile; frontmatter: Record<string, unknown> }[] = [];
-  /** 결과 순서를 파일 목록 순서로 맞추려고 자리를 먼저 잡아 둔다. */
+  /** 캐시가 못 쓰는 사건 노트들. 본문을 읽어야 한다. */
+  const toRead: {
+    file: TFile;
+    metadata: CachedMetadata;
+    frontmatter: Record<string, unknown>;
+  }[] = [];
+  /**
+   * 이번 스캔에서 얻은 항목. 사건 노트 중 본문을 새로 읽은 것은 맨 뒤에 붙으므로
+   * 파일 목록 순서와 다를 수 있다. 순서는 buildLoreData가 다시 정한다.
+   */
   const entries: (CacheEntry | null)[] = [];
 
   for (const file of files) {
     seen.add(file.path);
 
+    const metadata = app.metadataCache.getFileCache(file);
     const cached = cache.get(file.path);
-    if (cached && cached.mtime === file.stat.mtime) {
+    if (cached && cached.mtime === file.stat.mtime && cached.metadata === metadata) {
       entries.push(cached);
       continue;
     }
 
-    const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-    if (!frontmatter) {
+    const frontmatter = metadata?.frontmatter;
+    if (!metadata || !frontmatter) {
       entries.push(null);
       continue;
     }
@@ -217,12 +234,13 @@ export async function scanVault(
 
     if (kind === "event") {
       // 본문(설명·H1)이 필요하다. 목록에 적어 두고 아래에서 한꺼번에 읽는다.
-      toRead.push({ file, frontmatter });
+      toRead.push({ file, metadata, frontmatter });
       continue;
     }
 
     const entry: CacheEntry = {
       mtime: file.stat.mtime,
+      metadata,
       kind,
       name: file.basename,
       path: file.path,
@@ -238,10 +256,11 @@ export async function scanVault(
     toRead.map(({ file }) => file),
   );
 
-  toRead.forEach(({ file, frontmatter }, index) => {
+  toRead.forEach(({ file, metadata, frontmatter }, index) => {
     const { event, warnings: eventWarnings } = toEvent(file, frontmatter, contents[index]);
     const entry: CacheEntry = {
       mtime: file.stat.mtime,
+      metadata,
       kind: "event",
       name: file.basename,
       path: file.path,

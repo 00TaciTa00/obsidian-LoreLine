@@ -21,16 +21,19 @@ export type LoadOptions = {
 const MAX_NOTICES = 5;
 
 /**
- * 설정에 적은 폴더가 실제로 있는지.
+ * 세계 폴더가 아직 있는지.
  *
- * 오타 하나로 아무것도 안 걸리면 "사건 노트가 없다"가 뜬다. 노트를 아직 안
- * 만든 것과 폴더 이름을 잘못 적은 것은 아주 다른 상황이라 갈라서 알린다.
+ * 탭은 보던 세계를 workspace.json에 들고 있다가 재시작 뒤 그대로 연다. 그 사이
+ * 폴더 이름을 바꾸거나 지웠으면 아무것도 안 걸려 "사건 노트가 없다"가 뜬다.
+ * 노트를 아직 안 만든 것과는 아주 다른 상황이라 갈라서 알린다.
  */
 function checkFolder(app: App, folder: string): string[] {
   if (!folder) return [];
   const target = app.vault.getAbstractFileByPath(folder);
   if (target instanceof TFolder) return [];
-  return [`대상 폴더 "${folder}"를 찾지 못했다. 설정에서 경로를 확인하라.`];
+  return [
+    `세계 폴더 "${folder}"를 찾지 못했다. 이름을 바꾸거나 지웠다면 툴바의 세계 이름을 눌러 다시 고르라.`,
+  ];
 }
 
 /**

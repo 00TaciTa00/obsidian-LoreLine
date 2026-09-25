@@ -9,8 +9,20 @@ import { createScanCache, ScanCaches, scanVault, touchesFolder, type ScanCache }
  * 무엇을 몇 번 읽었는지, 몇 개를 동시에 읽었는지까지 센다. 캐시가 실제로
  * 읽기를 줄이는지, 읽기가 정말 병렬로 나가는지를 보려면 그 수가 필요하다.
  */
+type FakeFile = {
+  mtime: number;
+  content: string;
+  /**
+   * metadataCache가 들고 있는 파싱 결과. 옵시디언처럼 다시 파싱할 때만 새 객체가
+   * 되고, 그 전까지는 같은 객체를 돌려준다.
+   */
+  metadata: { frontmatter: unknown };
+  /** 파일은 바뀌었는데 아직 파싱되지 않은 frontmatter */
+  pending?: unknown;
+};
+
 class FakeVault {
-  private files = new Map<string, { mtime: number; content: string; frontmatter: unknown }>();
+  private files = new Map<string, FakeFile>();
 
   /** 경로별 본문 읽기 횟수 */
   readCounts = new Map<string, number>();
@@ -19,14 +31,36 @@ class FakeVault {
   private inFlight = 0;
 
   set(path: string, frontmatter: unknown, content = "", mtime = 1): this {
-    this.files.set(path, { mtime, content, frontmatter });
+    this.files.set(path, { mtime, content, metadata: { frontmatter } });
     return this;
   }
 
+  /** 파일을 고치고 파싱까지 끝난 상태 */
   touch(path: string, content?: string): this {
     const file = this.files.get(path)!;
     file.mtime += 1;
     if (content !== undefined) file.content = content;
+    file.metadata = { frontmatter: file.metadata.frontmatter };
+    return this;
+  }
+
+  /**
+   * 파일은 디스크에서 바뀌었는데 metadataCache는 아직 옛 파싱 결과를 주는 상태.
+   * vault의 modify가 metadataCache의 changed보다 먼저 오는 틈이다.
+   */
+  editBeforeParse(path: string, frontmatter: unknown, content?: string): this {
+    const file = this.files.get(path)!;
+    file.mtime += 1;
+    if (content !== undefined) file.content = content;
+    file.pending = frontmatter;
+    return this;
+  }
+
+  /** 미뤄 둔 파싱을 끝낸다. mtime은 그대로다. */
+  finishParse(path: string): this {
+    const file = this.files.get(path)!;
+    file.metadata = { frontmatter: file.pending };
+    delete file.pending;
     return this;
   }
 
@@ -65,7 +99,7 @@ class FakeVault {
       },
       metadataCache: {
         getFileCache(file: TFile) {
-          return { frontmatter: vault.files.get(file.path)?.frontmatter };
+          return vault.files.get(file.path)?.metadata ?? null;
         },
       },
     } as unknown as App;
@@ -235,6 +269,38 @@ describe("scanVault - 캐시", () => {
 
     expect(result.events).toHaveLength(1);
     expect(cache.has("세계/b.md")).toBe(false);
+  });
+
+  it("본문 읽기가 파싱을 앞질러도, 파싱이 끝나면 새 frontmatter를 쓴다", async () => {
+    vault.set("세계/아나이스.md", { loreline: "character" });
+    const app = vault.asApp();
+
+    await scanVault(app, "세계", cache);
+
+    // 인물 노트를 사건으로 바꿨는데 파싱이 아직이다. 이때 도는 스캔은 옛 값을 볼
+    // 수밖에 없고, 그 결과가 새 mtime으로 캐시에 들어간다.
+    vault.editBeforeParse("세계/아나이스.md", EVENT, "성문이 열렸다.");
+    expect((await scanVault(app, "세계", cache)).characters).toHaveLength(1);
+
+    // 파싱이 끝나면 mtime은 같아도 새 값이어야 한다.
+    vault.finishParse("세계/아나이스.md");
+    const result = await scanVault(app, "세계", cache);
+
+    expect(result.characters).toEqual([]);
+    expect(result.events.map((e) => e.description)).toEqual(["성문이 열렸다."]);
+  });
+
+  it("사건의 frontmatter만 늦게 바뀌어도 새 값을 쓴다", async () => {
+    vault.set("세계/함락.md", EVENT, "성문이 열렸다.");
+    const app = vault.asApp();
+
+    await scanVault(app, "세계", cache);
+    vault.editBeforeParse("세계/함락.md", { ...EVENT, sortKey: 5000 });
+    await scanVault(app, "세계", cache);
+    vault.finishParse("세계/함락.md");
+
+    const [event] = (await scanVault(app, "세계", cache)).events;
+    expect(event.sortKey).toBe(5000);
   });
 
   it("캐시를 안 넘기면 매번 처음부터 읽는다", async () => {

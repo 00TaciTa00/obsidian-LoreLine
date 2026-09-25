@@ -54,10 +54,10 @@ beforeEach(() => {
   Notice.reset();
 });
 
-describe("loadLoreData - 대상 폴더 확인", () => {
+describe("loadLoreData - 세계 폴더 확인", () => {
   it("폴더가 없으면 알린다", async () => {
-    // 오타 하나로 아무것도 안 걸리면 "사건 노트가 없다"가 뜬다. 노트를 아직
-    // 안 만든 것과 이름을 잘못 적은 것은 아주 다른 상황이다.
+    // 탭이 기억하던 폴더가 이름이 바뀌었으면 "사건 노트가 없다"가 뜬다. 노트를
+    // 아직 안 만든 것과는 아주 다른 상황이다.
     const app = makeApp({ folders: ["세계"] });
 
     const data = await loadLoreData(app, {
